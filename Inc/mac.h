@@ -77,7 +77,7 @@ typedef struct {
   MAC_AddressMode SrcAdrMode : 2;
   MAC_AckRequest AckRequest : 1;
   MAC_FramePending FramePending : 1;
-  MAC_FrameType FrameType : 1;
+  MAC_FrameType FrameType : 2;
 } MAC_FrameControl;
 
 /* General MAC Frame structure */
@@ -85,7 +85,6 @@ typedef struct {
   MAC_FrameControl FrameControl;
   MAC_AddressField Address;
   MAC_Payload Payload;
-  uint16_t Checksum;
   uint8_t Sequence;
 } MAC_Frame;
 
@@ -140,5 +139,9 @@ memcpy(Dst, Src, Len); Src += Len; } while(0)
 *((uint32_t *) Dst) = __REV(*((uint32_t *) Src)); Dst += 4; } while(0)
 #define MAC_WriteStream(Dst, Src, Len) do {\
 memcpy(Dst, Src, Len); Dst += Len; } while(0)
+
+MAC_Status MAC_EncodeFrame(MAC_Frame *F, uint8_t *Data);
+MAC_Status MAC_DecodeFrame(MAC_Frame *F, uint8_t *Data, uint16_t Len);
+uint16_t MAC_GetFrameSize(MAC_Frame *F);
 
 #endif // __MAC_H__

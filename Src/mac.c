@@ -8,9 +8,9 @@ void MAC_UpdatePayloadStart(MAC_Frame *F) {
 }
 
 uint16_t MAC_GetFrameSize(MAC_Frame *F) {
-  uint16_t Len;
-
+  // Get start size
   MAC_UpdatePayloadStart(F);
+  // 2 bytes FCS + start + length
   return 2 + F->Payload.Start + F->Payload.Length;
 }
 
@@ -54,6 +54,8 @@ MAC_Status MAC_EncodeFrame(MAC_Frame *F, uint8_t *Data) {
   // Calculate checksum
   Checksum = CRC_Checksum(DataPtr, (size_t)(Data - DataPtr));
   MAC_WriteWord(Data, &Checksum);
+
+  return MAC_STATUS_OK;
 }
 
 /* Decodes the data stream into structured frame */
@@ -102,6 +104,5 @@ MAC_Status MAC_DecodeFrame(MAC_Frame *F, uint8_t *Data, uint16_t Len) {
     MAC_ReadStream(F->Payload.Data, Data, F->Payload.Length);
   }
 
-  // Get the checksum
-  MAC_ReadWord(&F->Checksum, Data);
+  return MAC_STATUS_OK;
 }
