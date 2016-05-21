@@ -2,11 +2,16 @@
 #define __MAC_H__
 
 #include <inttypes.h>
+#include <string.h>
+#include <stdlib.h>
 
 /* Enumeration types */
 typedef enum {
   MAC_STATUS_OK,
-  MAC_STATUS_INVALID_PARAM
+  MAC_STATUS_INVALID_PARAM,
+  MAC_STATUS_INVALID_CHECKSUM,
+  MAC_STATUS_INVALID_LENGTH,
+  MAC_STATUS_MEMORY_ERROR
 } MAC_Status;
 
 typedef enum {
@@ -61,17 +66,10 @@ typedef struct {
 } MAC_PayloadCommand;
 
 typedef union {
-  // Data frame
   uint8_t *Data;
-  // Command frame
-  MAC_PayloadCommand Command;
-} MAC_Payload;
-
-/* PayloadInfo typedef */
-typedef struct {
   uint16_t Start;
   uint16_t Length;
-} MAC_PayloadInfo;
+} MAC_Payload;
 
 /* Frame control type */
 typedef struct {
@@ -87,7 +85,6 @@ typedef struct {
   MAC_FrameControl FrameControl;
   MAC_AddressField Address;
   MAC_Payload Payload;
-  MAC_PayloadInfo PayloadInfo;
   uint16_t Checksum;
   uint8_t Sequence;
 } MAC_Frame;
@@ -116,6 +113,15 @@ static uint16_t MAC_GetAddressSize(MAC_AddressMode Mode) {
   }
 }
 
+/* Memory utility */
+static void *MEM_Alloc(size_t Size) {
+  return malloc(Size);
+}
+
+static void MEM_Free(void *Ptr) {
+  return free(Ptr);
+}
+
 /* Copy utility */
 #define MAC_ReadByte(Dst, Src) do { \
 *((uint8_t *) Dst) = *((uint8_t *) Src); Src += 1; } while(0)
@@ -123,6 +129,8 @@ static uint16_t MAC_GetAddressSize(MAC_AddressMode Mode) {
 *((uint16_t *) Dst) = __REV16(*((uint16_t *) Src)); Src += 2; } while(0)
 #define MAC_ReadDword(Dst, Src) do { \
 *((uint32_t *) Dst) = __REV(*((uint32_t *) Src)); Src += 4; } while(0)
+#define MAC_ReadStream(Dst, Src, Len) do {\
+memcpy(Dst, Src, Len); Src += Len; } while(0)
 
 #define MAC_WriteByte(Dst, Src) do { \
 *((uint8_t *) Dst) = *((uint8_t *) Src); Dst += 1; } while(0)
@@ -130,5 +138,7 @@ static uint16_t MAC_GetAddressSize(MAC_AddressMode Mode) {
 *((uint16_t *) Dst) = __REV16(*((uint16_t *) Src)); Dst += 2; } while(0)
 #define MAC_WriteDword(Dst, Src) do { \
 *((uint32_t *) Dst) = __REV(*((uint32_t *) Src)); Dst += 4; } while(0)
+#define MAC_WriteStream(Dst, Src, Len) do {\
+memcpy(Dst, Src, Len); Dst += Len; } while(0)
 
 #endif // __MAC_H__
