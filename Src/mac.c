@@ -106,3 +106,7 @@ MAC_Status MAC_DecodeFrame(MAC_Frame *F, uint8_t *Data, uint16_t Len) {
 
   return MAC_STATUS_OK;
 }
+
+MAC_Status MAC_CheckAddress(MAC_Frame *F) {
+
+}

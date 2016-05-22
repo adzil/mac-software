@@ -65,8 +65,8 @@ typedef struct {
   uint16_t ShortAddress;
 } MAC_PayloadCommand;
 
-typedef union {
-  uint8_t *Data;
+typedef struct {
+  void *Data;
   uint16_t Start;
   uint16_t Length;
 } MAC_Payload;
