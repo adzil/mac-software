@@ -1,6 +1,27 @@
 #include <mac.h>
 #include <crc16.h>
 
+MAC_Frame *MAC_CreateFrame(void) {
+  // Create the frame buffer
+  return MEM_Alloc(sizeof(MAC_Frame));
+}
+
+MAC_Status MAC_CreatePayload(MAC_Frame *F, uint16_t Len) {
+  F->Payload.Length = Len;
+  F->Payload.Data = MEM_Alloc(Len);
+  if (!F->Payload.Data) return MAC_STATUS_MEMORY_ERROR;
+  return MAC_STATUS_OK;
+}
+
+void MAC_DestroyFrame(MAC_Frame *F) {
+  // Destroy the payload buffer, if available
+  if (F->Payload.Length > 0) {
+    MEM_Free(F->Payload.Data);
+  }
+  // Destroy the frame buffer
+  MEM_Free(F);
+}
+
 void MAC_UpdatePayloadStart(MAC_Frame *F) {
   // 1byte FrameControl + 1byte Sequence + n bytes SrcAdr + n bytes DstAdr
   F->Payload.Start = 2 + MAC_GetAddressSize(F->FrameControl.DstAdrMode) +
@@ -98,15 +119,11 @@ MAC_Status MAC_DecodeFrame(MAC_Frame *F, uint8_t *Data, uint16_t Len) {
   // Get the data (if there is data available)
   if (F->Payload.Length > 0) {
     // Allocate memory for payload
-    F->Payload.Data = MEM_Alloc(F->Payload.Length);
-    if (!F->Payload.Data) return MAC_STATUS_MEMORY_ERROR;
+    if (MAC_CreatePayload(F, F->Payload.Length) != MAC_STATUS_OK)
+      return MAC_STATUS_MEMORY_ERROR;
     // Copy the payload contents
     MAC_ReadStream(F->Payload.Data, Data, F->Payload.Length);
   }
 
   return MAC_STATUS_OK;
-}
-
-MAC_Status MAC_CheckAddress(MAC_Frame *F) {
-
 }
