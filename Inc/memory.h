@@ -2,7 +2,7 @@
 #define __MEMORY_H__
 
 #include <stdlib.h>
-#include <appdef.h>
+#include "appdef.h"
 
 /* Memory utility */
 force_inline void *MEM_Alloc(size_t Size) {
