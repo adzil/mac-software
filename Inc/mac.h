@@ -3,7 +3,7 @@
 
 #include <inttypes.h>
 #include <string.h>
-#include <stdlib.h>
+#include <memory.h>
 
 /* Enumeration types */
 typedef enum {
@@ -112,15 +112,6 @@ static uint16_t MAC_GetAddressSize(MAC_AddressMode Mode) {
   }
 }
 
-/* Memory utility */
-static void *MEM_Alloc(size_t Size) {
-  return malloc(Size);
-}
-
-static void MEM_Free(void *Ptr) {
-  return free(Ptr);
-}
-
 /* Copy utility */
 #define MAC_ReadByte(Dst, Src) do { \
 *((uint8_t *) Dst) = *((uint8_t *) Src); Src += 1; } while(0)
@@ -140,8 +131,11 @@ memcpy(Dst, Src, Len); Src += Len; } while(0)
 #define MAC_WriteStream(Dst, Src, Len) do {\
 memcpy(Dst, Src, Len); Dst += Len; } while(0)
 
+MAC_Frame *MAC_CreateFrame(void);
+MAC_Status MAC_CreatePayload(MAC_Frame *F);
 MAC_Status MAC_EncodeFrame(MAC_Frame *F, uint8_t *Data);
 MAC_Status MAC_DecodeFrame(MAC_Frame *F, uint8_t *Data, uint16_t Len);
 uint16_t MAC_GetFrameSize(MAC_Frame *F);
+MAC_Status MAC_DestroyFrame(MAC_Frame *F);
 
 #endif // __MAC_H__

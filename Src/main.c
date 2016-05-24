@@ -8,8 +8,8 @@ int main(void) {
   uint8_t *Data;
   uint16_t Len;
 
-  F = MEM_Alloc(sizeof(MAC_Frame));
-  G = MEM_Alloc(sizeof(MAC_Frame));
+  F = MAC_CreateFrame();
+  if (F == NULL) return 100;
 
   // Frame control
   F->FrameControl.DstAdrMode = MAC_ADRMODE_SHORT;
@@ -21,15 +21,21 @@ int main(void) {
   F->Address.Dst.Short = 0xdafa;
   F->Address.Src.Short = 0xadfa;
   // Payload assignment
-  F->Payload.Data = Payload;
   F->Payload.Length = sizeof(Payload);
+  MAC_CreatePayload(F);
+  memcpy(F->Payload.Data, Payload, F->Payload.Length);
+
   F->Sequence = rand() & 0xff;
 
   Len = MAC_GetFrameSize(F);
   Data = MEM_Alloc(Len);
   MAC_EncodeFrame(F, Data);
   // Decode frame
+  G = MAC_CreateFrame();
   MAC_DecodeFrame(G, Data, Len);
+
+  MAC_DestroyFrame(F);
+  MAC_DestroyFrame(G);
 
   return 0;
 }

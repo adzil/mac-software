@@ -8,4 +8,4 @@ file(GLOB HEADER_FILES Inc/*.h)
 
 include_directories(Inc)
 
-add_executable(mac_software ${SOURCE_FILES} ${HEADER_FILES})
+add_executable(mac_software_launch ${SOURCE_FILES} ${HEADER_FILES})

@@ -1,25 +1,76 @@
 #include <mac.h>
 #include <crc16.h>
+#include <queue.h>
 
-MAC_Frame *MAC_CreateFrame(void) {
-  // Create the frame buffer
-  return MEM_Alloc(sizeof(MAC_Frame));
+MAC_Frame *MAC_FindQueue(QUE_Head *H, MAC_Address Address,
+                         MAC_AddressMode AdrMode) {
+  MAC_Frame *F;
+  QUE_Item *I, *IL;
+
+  if (AdrMode != MAC_ADRMODE_SHORT && AdrMode != MAC_ADRMODE_EXTENDED)
+    return NULL;
+
+  LOCK_Start(&H->Lock);
+
+  I = H->First;
+  IL = I;
+  F = NULL;
+
+  while (I) {
+    F = (MAC_Frame *) I->Data;
+    if (AdrMode == MAC_ADRMODE_SHORT) {
+      if (Address.Short == F->Address.Dst.Short)
+        break;
+    } else {
+      if (Address.Extended == F->Address.Dst.Extended)
+        break;
+    }
+    // Iterate to next item
+    IL = I;
+    I = I->Next;
+  }
+
+  if (F) {
+
+  }
+
+  LOCK_End(&H->Lock);
 }
 
-MAC_Status MAC_CreatePayload(MAC_Frame *F, uint16_t Len) {
-  F->Payload.Length = Len;
-  F->Payload.Data = MEM_Alloc(Len);
+MAC_Frame *MAC_CreateFrame(void) {
+  MAC_Frame *F;
+
+  // Create the frame buffer
+  F = MEM_Alloc(sizeof(MAC_Frame));
+
+  if (!F) return NULL;
+
+  // Reset the payload details
+  F->Payload.Data = NULL;
+  F->Payload.Length = 0;
+  F->Payload.Start = 0;
+
+  return F;
+}
+
+MAC_Status MAC_CreatePayload(MAC_Frame *F) {
+  if (F->Payload.Length == 0) return MAC_STATUS_INVALID_LENGTH;
+  F->Payload.Data = MEM_Alloc(F->Payload.Length);
   if (!F->Payload.Data) return MAC_STATUS_MEMORY_ERROR;
+
   return MAC_STATUS_OK;
 }
 
-void MAC_DestroyFrame(MAC_Frame *F) {
+MAC_Status MAC_DestroyFrame(MAC_Frame *F) {
   // Destroy the payload buffer, if available
-  if (F->Payload.Length > 0) {
+  if (F->Payload.Data != NULL) {
     MEM_Free(F->Payload.Data);
+    F->Payload.Data = NULL;
   }
   // Destroy the frame buffer
   MEM_Free(F);
+
+  return MAC_STATUS_OK;
 }
 
 void MAC_UpdatePayloadStart(MAC_Frame *F) {
@@ -119,7 +170,7 @@ MAC_Status MAC_DecodeFrame(MAC_Frame *F, uint8_t *Data, uint16_t Len) {
   // Get the data (if there is data available)
   if (F->Payload.Length > 0) {
     // Allocate memory for payload
-    if (MAC_CreatePayload(F, F->Payload.Length) != MAC_STATUS_OK)
+    if (MAC_CreatePayload(F) != MAC_STATUS_OK)
       return MAC_STATUS_MEMORY_ERROR;
     // Copy the payload contents
     MAC_ReadStream(F->Payload.Data, Data, F->Payload.Length);
