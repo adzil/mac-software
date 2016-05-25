@@ -3,7 +3,7 @@
 
 #include <inttypes.h>
 #include "mac-common.h"
-#include "memory.h"
+#include "mac-config.h"
 #include "crc16.h"
 
 /* Enumeration types */
@@ -59,7 +59,7 @@ typedef struct {
 } MAC_FramePayloadCommand;
 
 typedef struct {
-  void *Data;
+  uint8_t Data[MAC_CONFIG_MAX_PAYLOAD_LENGTH];
   uint16_t Start;
   uint16_t Length;
 } MAC_FramePayload;
@@ -95,11 +95,8 @@ static uint16_t MAC_FrameGetAddressSize(MAC_FrameAddressMode Mode) {
   }
 }
 
-MAC_Frame *MAC_FrameCreate(void);
-MAC_Status MAC_FrameCreatePayload(MAC_Frame *F);
 MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data);
 MAC_Status MAC_FrameDecode(MAC_Frame *F, uint8_t *Data, uint16_t Len);
 uint16_t MAC_FrameGetSize(MAC_Frame *F);
-MAC_Status MAC_FrameDestroy(MAC_Frame *F);
 
 #endif // __MAC_FRAME_H__

@@ -4,7 +4,6 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include "lock.h"
-#include "memory.h"
 #include "appdef.h"
 
 typedef struct QUE_Item {
@@ -16,43 +15,62 @@ typedef struct {
   QUE_Item *First;
   QUE_Item *Last;
   QUE_Item *Free;
-  LOCK_Handle Lock;
-} QUE_Queue;
-
-typedef struct {
-  QUE_Item *List;
-  QUE_Item *Free;
   QUE_Item *Find;
   QUE_Item *FindLast;
   LOCK_Handle Lock;
-} QUE_List;
+} QUE_Queue;
 
-#define QUE_CallMem(Name) QUE_Mem##Name
-#define QUE_AllocMem(Name, Len) static QUE_Item QUE_CallMem(Name)[Len]
+#define QUE_MemCall(Name) QUE_Mem##Name
+#define QUE_MemAlloc(Name, Len) static QUE_Item QUE_MemCall(Name)[Len]
 
 void QUE_QueueInit(QUE_Queue *H, QUE_Item *Mem, int Len);
 void *QUE_QueuePush(QUE_Queue *H, void *Data);
 void *QUE_QueueAppend(QUE_Queue *H, void *Data);
 void *QUE_QueuePop(QUE_Queue *H);
 
-void QUE_ListInit(QUE_List *L, QUE_Item *Mem, int Len);
-void *QUE_ListPush(QUE_List *L, void *Data);
+/* Inline functions to data-independent list search */
+force_inline void QUE_QueueFreeItem(QUE_Queue *H, QUE_Item *I) {
+  I->Next = H->Free;
+  I->Data = NULL;
+  H->Free = I;
+}
 
-void QUE_ListPopInit(QUE_List *L);
-void QUE_ListPopEnd(QUE_List *L);
+force_inline void QUE_QueueFindInit(QUE_Queue *H) {
+  // Initialize find pointer
+  H->Find = NULL;
+}
 
-/* List inline functions */
-force_inline void *QUE_ListPop(QUE_List *L) {
-  if (L->Find) {
-    L->FindLast = L->Find;
-    L->Find = L->Find->Next;
+force_inline void *QUE_QueueFind(QUE_Queue *H) {
+  // Iterate list
+  if (H->Find) {
+    H->FindLast = H->Find;
+    H->Find = H->Find->Next;
   } else {
-    L->Find = L->List;
-    L->FindLast = L->Find;
+    H->Find = H->First;
+    H->FindLast = NULL;
   }
 
-  if (!L->Find) return NULL;
-  return L->Find->Data;
+  if (!H->Find) return NULL;
+  return H->Find->Data;
+}
+
+force_inline void QUE_QueueFindEnd(QUE_Queue *H) {
+  // Check if the item has been found
+  if (H->Find) {
+    // Fix last item linkage
+    if (H->FindLast) {
+      H->FindLast->Next = H->Find->Next;
+    }
+    // Fix queue pointer
+    if (H->First == H->Find) {
+      H->First = H->Find->Next;
+    }
+    if (H->Last == H->Find) {
+      H->Last = H->FindLast;
+    }
+    // Free queue
+    QUE_QueueFreeItem(H, H->Find);
+  }
 }
 
 #endif // __QUEUE_H__

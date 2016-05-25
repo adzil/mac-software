@@ -1,0 +1,7 @@
+#ifndef __MAC_CONFIG_H__
+#define __MAC_CONFIG_H__
+
+#define MAC_CONFIG_MAX_PAYLOAD_LENGTH 16
+#define MAC_CONFIG_MAX_FRAME_POOL 32
+
+#endif // __MAC_CONFIG_H__
