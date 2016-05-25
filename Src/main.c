@@ -5,12 +5,12 @@
 QUE_MemAlloc(MAC_List, 10);
 
 uint8_t Payload[] = "Test data";
-MAC_MemFrame P;
 
 int main(void) {
   MAC_Frame *F;
   int i;
   QUE_Queue Q;
+  MAC_MemFrame P;
   MAC_FrameAddress Address;
 
   // Initialize queue memory
@@ -21,6 +21,9 @@ int main(void) {
   for (i = 0; i < 33; i++) {
     F = MAC_MemFrameAlloc(&P);
     if (!F) return 1;
+    if (i == 32) {
+      printf("test");
+    }
     F->Address.Dst.Short = i;
     F->FrameControl.DstAdrMode = MAC_ADRMODE_SHORT;
 
