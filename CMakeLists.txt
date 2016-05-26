@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(mac_software)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O0")
 
 file(GLOB SOURCE_FILES Src/*.c)
 file(GLOB HEADER_FILES Inc/*.h)

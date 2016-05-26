@@ -1,6 +1,6 @@
 #include "mac-queue.h"
 
-MAC_Frame *MAC_FrameQueueFind(QUE_Queue *H, MAC_FrameAddressMode AdrMode,
+MAC_Frame *MAC_QueueFrameFind(QUE_Queue *H, MAC_FrameAddressMode AdrMode,
                               MAC_FrameAddress Address) {
   MAC_Frame *F;
 

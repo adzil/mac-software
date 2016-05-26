@@ -6,18 +6,18 @@
 #include "appdef.h"
 #include "mac-frame.h"
 
-MAC_Frame *MAC_FrameQueueFind(QUE_Queue *H, MAC_FrameAddressMode AdrMode,
+MAC_Frame *MAC_QueueFrameFind(QUE_Queue *H, MAC_FrameAddressMode AdrMode,
                               MAC_FrameAddress Address);
 
-force_inline MAC_Frame *MAC_FrameQueueAppend(QUE_Queue *H, MAC_Frame *F) {
+force_inline MAC_Frame *MAC_QueueFrameAppend(QUE_Queue *H, MAC_Frame *F) {
   return (MAC_Frame *) QUE_QueueAppend(H, (void *) F);
 }
 
-force_inline MAC_Frame *MAC_FrameQueuePush(QUE_Queue *H, MAC_Frame *F) {
+force_inline MAC_Frame *MAC_QueueFramePush(QUE_Queue *H, MAC_Frame *F) {
   return (MAC_Frame *) QUE_QueuePush(H, (void *) F);
 }
 
-force_inline MAC_Frame *MAC_FrameQueuePop(QUE_Queue *H) {
+force_inline MAC_Frame *MAC_QueueFramePop(QUE_Queue *H) {
   return (MAC_Frame *) QUE_QueuePop(H);
 }
 
