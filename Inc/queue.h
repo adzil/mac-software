@@ -20,8 +20,8 @@ typedef struct {
   LOCK_Handle Lock;
 } QUE_Queue;
 
-#define QUE_MemCall(Name) QUE_Mem##Name
-#define QUE_MemAlloc(Name, Len) static QUE_Item QUE_MemCall(Name)[Len]
+#define QUE_MemCall(Name) QuePool##Name
+#define QUE_MemAlloc(Name, Len) QUE_Item QUE_MemCall(Name)[Len]
 
 void QUE_QueueInit(QUE_Queue *H, QUE_Item *Mem, int Len);
 void *QUE_QueuePush(QUE_Queue *H, void *Data);
@@ -54,7 +54,7 @@ force_inline void *QUE_QueueFind(QUE_Queue *H) {
   return H->Find->Data;
 }
 
-force_inline void QUE_QueueFindEnd(QUE_Queue *H) {
+force_inline void QUE_QueueFindPop(QUE_Queue *H) {
   // Check if the item has been found
   if (H->Find) {
     // Fix last item linkage

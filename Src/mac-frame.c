@@ -1,22 +1,14 @@
+#include <mac-frame.h>
 #include "mac-frame.h"
-
-void MAC_UpdatePayloadStart(MAC_Frame *F) {
-  // 1byte FrameControl + 1byte Sequence + n bytes SrcAdr + n bytes DstAdr
-  F->Payload.Start = 2 + MAC_FrameGetAddressSize(F->FrameControl.DstAdrMode) +
-                         MAC_FrameGetAddressSize(F->FrameControl.SrcAdrMode);
-}
-
-uint16_t MAC_FrameGetSize(MAC_Frame *F) {
-  // Get start size
-  MAC_UpdatePayloadStart(F);
-  // 2 bytes FCS + start + length
-  return 2 + F->Payload.Start + F->Payload.Length;
-}
 
 /* Encode the structured frame into data stream */
 MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data) {
   uint8_t *DataPtr;
   uint16_t Checksum;
+
+  // Check for data length
+  if (F->Payload.Length > MAC_CONFIG_MAX_PAYLOAD_LENGTH)
+    return MAC_STATUS_INVALID_LENGTH;
 
   // Store the data pointer
   DataPtr = Data;
@@ -58,7 +50,12 @@ MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data) {
 }
 
 /* Decodes the data stream into structured frame */
-MAC_Status MAC_FrameDecode(MAC_Frame *F, uint8_t *Data, uint16_t Len) {
+MAC_Status MAC_FrameDecode(MAC_Frame *F, uint8_t *Data, size_t Len) {
+  size_t StartLen;
+
+  // Check for frame buffer length
+  if (Len > MAC_CONFIG_MAX_FRAME_BUFFER)
+    return MAC_STATUS_INVALID_LENGTH;
   // Check the checksum first before process the data
   if (CRC_Checksum(Data, Len)) return MAC_STATUS_INVALID_CHECKSUM;
   // Get frame control and byte sequence
@@ -66,11 +63,12 @@ MAC_Status MAC_FrameDecode(MAC_Frame *F, uint8_t *Data, uint16_t Len) {
   MAC_ReadByte(&F->Sequence, Data);
 
   // Update the payload info
-  MAC_UpdatePayloadStart(F);
+  StartLen = MAC_GetFrameAddressSize(F->FrameControl.DstAdrMode) +
+             MAC_GetFrameAddressSize(F->FrameControl.SrcAdrMode) + 2;
   // Check for length issues
-  if (F->Payload.Start + 2 > Len) return MAC_STATUS_INVALID_LENGTH;
+  if (StartLen + 2 > Len) return MAC_STATUS_INVALID_LENGTH;
   // Calculate the payload length (Total - Start - 2byte FCS)
-  F->Payload.Length = Len - F->Payload.Start - 2;
+  F->Payload.Length = Len - StartLen - 2;
 
   // Get the address
   switch (F->FrameControl.DstAdrMode) {
@@ -101,4 +99,34 @@ MAC_Status MAC_FrameDecode(MAC_Frame *F, uint8_t *Data, uint16_t Len) {
   }
 
   return MAC_STATUS_OK;
+}
+
+void MAC_FrameCommandEncode(MAC_Frame *F, MAC_FrameCommand *C) {
+  uint8_t *Data;
+
+  // Set data pointer
+  Data = F->Payload.Data;
+
+  // Get the command ID
+  MAC_WriteByte(Data, &C->CommandId);
+  // Check for command ID
+  if (C->CommandId == MAC_COMMAND_ID_ASSOC_RESPONSE) {
+    MAC_WriteDword(Data, &C->ShortAddress);
+    MAC_WriteByte(Data, &C->AssocStatus);
+  }
+}
+
+void MAC_FrameCommandDecode(MAC_Frame *F, MAC_FrameCommand *C) {
+  uint8_t *Data;
+
+  // Set data pointer
+  Data = F->Payload.Data;
+
+  // Get the command ID
+  MAC_ReadByte(&C->CommandId, Data);
+  // Check for command ID
+  if (C->CommandId == MAC_COMMAND_ID_ASSOC_RESPONSE) {
+    MAC_ReadDword(&C->ShortAddress, Data);
+    MAC_ReadByte(&C->AssocStatus, Data);
+  }
 }

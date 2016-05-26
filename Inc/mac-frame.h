@@ -56,12 +56,11 @@ typedef struct {
   MAC_FrameCommandId CommandId;
   MAC_FrameAssocStatus AssocStatus;
   uint16_t ShortAddress;
-} MAC_FramePayloadCommand;
+} MAC_FrameCommand;
 
 typedef struct {
   uint8_t Data[MAC_CONFIG_MAX_PAYLOAD_LENGTH];
-  uint16_t Start;
-  uint16_t Length;
+  size_t Length;
 } MAC_FramePayload;
 
 /* Frame control type */
@@ -82,7 +81,7 @@ typedef struct {
 } MAC_Frame;
 
 /* Getter utility */
-static uint16_t MAC_FrameGetAddressSize(MAC_FrameAddressMode Mode) {
+force_inline uint16_t MAC_GetFrameAddressSize(MAC_FrameAddressMode Mode) {
   switch (Mode) {
     case MAC_ADRMODE_NOT_PRESENT:
       return 0;
@@ -96,7 +95,86 @@ static uint16_t MAC_FrameGetAddressSize(MAC_FrameAddressMode Mode) {
 }
 
 MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data);
-MAC_Status MAC_FrameDecode(MAC_Frame *F, uint8_t *Data, uint16_t Len);
-uint16_t MAC_FrameGetSize(MAC_Frame *F);
+MAC_Status MAC_FrameDecode(MAC_Frame *F, uint8_t *Data, size_t Len);
+
+/* Public Setter */
+// Destination address (Frame Control & Address Field)
+force_inline void MAC_SetFrameShortDstAdr(MAC_Frame *F, uint16_t Adr) {
+  F->FrameControl.DstAdrMode = MAC_ADRMODE_SHORT;
+  F->Address.Dst.Short = Adr;
+}
+
+force_inline void MAC_SetFrameExtendedDstAdr(MAC_Frame *F, uint32_t Adr) {
+  F->FrameControl.DstAdrMode = MAC_ADRMODE_EXTENDED;
+  F->Address.Dst.Short = Adr;
+}
+
+force_inline void MAC_SetFrameNoDstAdr(MAC_Frame *F) {
+  F->FrameControl.DstAdrMode = MAC_ADRMODE_NOT_PRESENT;
+}
+
+// Source address (Frame Control & Address Field)
+force_inline void MAC_SetFrameShortSrcAdr(MAC_Frame *F, uint16_t Adr) {
+  F->FrameControl.SrcAdrMode = MAC_ADRMODE_SHORT;
+  F->Address.Src.Short = Adr;
+}
+
+force_inline void MAC_SetFrameExtendedSrcAdr(MAC_Frame *F, uint32_t Adr) {
+  F->FrameControl.SrcAdrMode = MAC_ADRMODE_EXTENDED;
+  F->Address.Src.Short = Adr;
+}
+
+force_inline void MAC_SetFrameNoSrcAdr(MAC_Frame *F) {
+  F->FrameControl.SrcAdrMode = MAC_ADRMODE_NOT_PRESENT;
+}
+
+// Ack Request (Frame Control)
+force_inline void MAC_SetFrameNoAckRequest(MAC_Frame *F) {
+  F->FrameControl.AckRequest = MAC_ACKREQUEST_RESET;
+}
+
+force_inline void MAC_SetFrameAckRequest(MAC_Frame *F) {
+  F->FrameControl.AckRequest = MAC_ACKREQUEST_SET;
+}
+
+// Frame Pending (Frame Control)
+force_inline void MAC_SetFrameNoPending(MAC_Frame *F) {
+  F->FrameControl.FramePending = MAC_FRAMEPENDING_RESET;
+}
+
+force_inline void MAC_SetFramePending(MAC_Frame *F) {
+  F->FrameControl.FramePending = MAC_FRAMEPENDING_SET;
+}
+
+// Frame Type (Frame Control)
+force_inline void MAC_SetFrameType(MAC_Frame *F, MAC_FrameType Type) {
+  F->FrameControl.FrameType = Type;
+}
+
+// Sequence number
+force_inline void MAC_SetFrameSequence(MAC_Frame *F, uint8_t Seq) {
+  F->Sequence = Seq;
+}
+
+force_inline void MAC_SetFrameSequenceAuto(MAC_Frame *F) {
+  // TODO: Auto sequence generator here
+}
+
+// Command Frame-specific setters
+force_inline void MAC_SetFrameCmdAssocRequest(MAC_FrameCommand *C) {
+  C->CommandId = MAC_COMMAND_ID_ASSOC_REQUEST;
+}
+
+force_inline void MAC_SetFrameCmdAssocResponse(MAC_FrameCommand *C,
+                                               uint16_t Address,
+                                               MAC_FrameAssocStatus Status) {
+  C->CommandId = MAC_COMMAND_ID_ASSOC_RESPONSE;
+  C->ShortAddress = Address;
+  C->AssocStatus = Status;
+}
+
+force_inline void MAC_SetFrameCmdDataRequest(MAC_FrameCommand *C) {
+  C->CommandId = MAC_COMMAND_ID_DATA_REQUEST;
+}
 
 #endif // __MAC_FRAME_H__

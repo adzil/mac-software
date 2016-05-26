@@ -10,8 +10,16 @@ typedef enum {
   MAC_STATUS_INVALID_PARAM,
   MAC_STATUS_INVALID_CHECKSUM,
   MAC_STATUS_INVALID_LENGTH,
+  MAC_STATUS_INVALID_DESTINATION,
+  MAC_STATUS_INVALID_SOURCE,
   MAC_STATUS_MEMORY_ERROR
 } MAC_Status;
+
+/* Typedefs */
+typedef struct {
+  uint32_t ExtendedAdr;
+  uint16_t ShortAdr;
+} MAC_AdrList;
 
 /* Copy utility */
 #define MAC_ReadByte(Dst, Src) do { \
