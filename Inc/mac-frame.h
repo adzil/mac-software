@@ -2,7 +2,7 @@
 #define __MAC_FRAME_H__
 
 #include <inttypes.h>
-#include "mac-common.h"
+#include "appdef.h"
 #include "mac-config.h"
 #include "crc16.h"
 
@@ -96,6 +96,8 @@ force_inline uint16_t MAC_GetFrameAddressSize(MAC_FrameAddressMode Mode) {
 
 MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data);
 MAC_Status MAC_FrameDecode(MAC_Frame *F, uint8_t *Data, size_t Len);
+void MAC_FrameCommandEncode(MAC_Frame *F, MAC_FrameCommand *C);
+void MAC_FrameCommandDecode(MAC_Frame *F, MAC_FrameCommand *C);
 
 /* Public Setter */
 // Destination address (Frame Control & Address Field)
@@ -113,6 +115,26 @@ force_inline void MAC_SetFrameNoDstAdr(MAC_Frame *F) {
   F->FrameControl.DstAdrMode = MAC_ADRMODE_NOT_PRESENT;
 }
 
+force_inline void MAC_SetFrameDstAdr(MAC_Frame *F, MAC_FrameAddressMode AdrMode,
+                                     MAC_FrameAddress Address) {
+  switch (AdrMode) {
+    case MAC_ADRMODE_NOT_PRESENT:
+      MAC_SetFrameNoDstAdr(F);
+      break;
+
+    case MAC_ADRMODE_SHORT:
+      MAC_SetFrameShortDstAdr(F, Address.Short);
+      break;
+
+    case MAC_ADRMODE_EXTENDED:
+      MAC_SetFrameExtendedDstAdr(F, Address.Extended);
+      break;
+
+    default:
+      break;
+  }
+}
+
 // Source address (Frame Control & Address Field)
 force_inline void MAC_SetFrameShortSrcAdr(MAC_Frame *F, uint16_t Adr) {
   F->FrameControl.SrcAdrMode = MAC_ADRMODE_SHORT;
@@ -127,6 +149,8 @@ force_inline void MAC_SetFrameExtendedSrcAdr(MAC_Frame *F, uint32_t Adr) {
 force_inline void MAC_SetFrameNoSrcAdr(MAC_Frame *F) {
   F->FrameControl.SrcAdrMode = MAC_ADRMODE_NOT_PRESENT;
 }
+
+void MAC_GenFrameSrcAdr(MAC_Handle *H, MAC_Frame *F);
 
 // Ack Request (Frame Control)
 force_inline void MAC_SetFrameNoAckRequest(MAC_Frame *F) {
@@ -156,9 +180,7 @@ force_inline void MAC_SetFrameSequence(MAC_Frame *F, uint8_t Seq) {
   F->Sequence = Seq;
 }
 
-force_inline void MAC_SetFrameSequenceAuto(MAC_Frame *F) {
-  // TODO: Auto sequence generator here
-}
+void MAC_GenFrameSequence(MAC_Handle *H, MAC_Frame *F);
 
 // Command Frame-specific setters
 force_inline void MAC_SetFrameCmdAssocRequest(MAC_FrameCommand *C) {

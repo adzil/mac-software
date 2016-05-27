@@ -9,6 +9,11 @@
 #define MAC_CONFIG_MAX_QUEUE_ADDRESS 10
 #define MAC_CONFIG_MAX_FRAME_BUFFER (4 + MAC_CONFIG_MAX_PAYLOAD_LENGTH)
 
-#define MAC_CONFIG_EXTENDED_ADDRESS 0x12345678
+#define MAC_CONST_USE_EXTENDED_ADDRESS 0xfffe
+#define MAC_CONST_ADDRESS_UNKNOWN 0xffff
+
+typedef struct {
+  uint32_t ExtendedAddress;
+} MAC_Config;
 
 #endif // __MAC_CONFIG_H__

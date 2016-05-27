@@ -2,9 +2,14 @@
 #define __MAC_QUEUE_H__
 
 /* MAC-Specific Queue functions */
-#include "queue.h"
 #include "appdef.h"
 #include "mac-frame.h"
+
+/* Typedefs */
+typedef struct {
+  uint32_t ExtendedAdr;
+  uint16_t ShortAdr;
+} MAC_AdrList;
 
 MAC_Frame *MAC_QueueFrameFind(QUE_Queue *H, MAC_FrameAddressMode AdrMode,
                               MAC_FrameAddress Address);

@@ -1,11 +1,15 @@
 #include <stdio.h>
-#include "mac-memory.h"
-#include "mac-queue.h"
+#include "mac.h"
 
-uint8_t Payload[] = "Test data";
+MAC_Handle MAC;
 
-MAC_Mem M;
+int main(void) {
+  MAC_AppInit(&MAC);
 
+  return 0;
+}
+
+/*
 int main(void) {
   MAC_Frame *F;
   int i;
@@ -50,4 +54,4 @@ int main(void) {
   }
 
   return 0;
-}
+}*/

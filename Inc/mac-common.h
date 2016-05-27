@@ -3,6 +3,12 @@
 
 #include <string.h>
 #include "appdef.h"
+/* Include all mac sub-functions */
+#include "mac-config.h"
+#include "mac-frame.h"
+#include "mac-memory.h"
+#include "mac-queue.h"
+#include "mac-pib.h"
 
 /* Enumeration types */
 typedef enum {
@@ -12,14 +18,17 @@ typedef enum {
   MAC_STATUS_INVALID_LENGTH,
   MAC_STATUS_INVALID_DESTINATION,
   MAC_STATUS_INVALID_SOURCE,
+  MAC_STATUS_INVALID_COMMAND,
   MAC_STATUS_MEMORY_ERROR
 } MAC_Status;
 
-/* Typedefs */
+// MAC Handle for single MAC instance
 typedef struct {
-  uint32_t ExtendedAdr;
-  uint16_t ShortAdr;
-} MAC_AdrList;
+  MAC_Pib Pib;
+  MAC_Config Config;
+  // The memory part should be on the bottom
+  MAC_Mem Mem;
+} MAC_Handle;
 
 /* Copy utility */
 #define MAC_ReadByte(Dst, Src) do { \

@@ -25,4 +25,20 @@ void MAC_AppFrameReceived(MAC_Handle *H, uint8_t *Data, size_t Length) {
     MAC_MemFrameFree(&H->Mem, F);
     return;
   }
+
+  // Process the packet
+  switch (F->FrameControl.FrameType) {
+    case MAC_FRAMETYPE_DATA:
+      // TODO: Pass data to higher layer
+      break;
+
+    case MAC_FRAMETYPE_COMMAND:
+      MAC_CmdExecute(H, F);
+      break;
+
+    default:
+      break;
+  }
+
+  MAC_MemFrameFree(&H->Mem, F);
 }

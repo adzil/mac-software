@@ -4,6 +4,20 @@
  *  This is the core function of the MAC such as data checking
  */
 
+void MAC_CoreSendFrame(MAC_Handle *H, MAC_Frame *F) {
+  MAC_QueueFrameAppend(&H->Mem.Tx, F);
+}
+
+void MAC_CoreQueueFrame(MAC_Handle *H, MAC_Frame *F) {
+  if (F->FrameControl.FrameType != MAC_FRAMETYPE_ACK) {
+    MAC_QueueFramePush(&H->Mem.Tx, F);
+  } else if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
+    MAC_QueueFrameAppend(&H->Mem.Store, F);
+  } else {
+    MAC_CoreSendFrame(H, F);
+  }
+}
+
 MAC_Status MAC_CoreCheckAddressing(MAC_Handle *H, MAC_Frame *F) {
   // Check the destination addressing
   switch (F->FrameControl.DstAdrMode) {
@@ -22,7 +36,7 @@ MAC_Status MAC_CoreCheckAddressing(MAC_Handle *H, MAC_Frame *F) {
       return MAC_STATUS_INVALID_DESTINATION;
 
     case MAC_ADRMODE_EXTENDED:
-      if (F->Address.Dst.Extended == MAC_CONFIG_EXTENDED_ADDRESS)
+      if (F->Address.Dst.Extended == H->Config.ExtendedAddress)
         break;
       return MAC_STATUS_INVALID_DESTINATION;
   }
