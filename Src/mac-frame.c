@@ -1,7 +1,3 @@
-#include <mac-frame.h>
-#include <mac-common.h>
-#include <mac-pib.h>
-#include <mac-config.h>
 #include "mac-frame.h"
 
 /* Encode the structured frame into data stream */
@@ -134,32 +130,4 @@ void MAC_FrameCommandDecode(MAC_Frame *F, MAC_FrameCommand *C) {
     MAC_ReadDword(&C->ShortAddress, Data);
     MAC_ReadByte(&C->AssocStatus, Data);
   }
-}
-
-void MAC_GenFrameSrcAdr(MAC_Handle *H, MAC_Frame *F) {
-  if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
-    if (F->FrameControl.DstAdrMode == MAC_ADRMODE_SHORT)
-      // No source address for short destination addresses
-      MAC_SetFrameNoSrcAdr(F);
-    else if (H->Pib.ShortAdr != MAC_CONST_USE_EXTENDED_ADDRESS &&
-             H->Pib.ShortAdr != MAC_CONST_ADDRESS_UNKNOWN)
-      // Use short address if already defined
-      MAC_SetFrameShortSrcAdr(F, H->Pib.ShortAdr);
-    else
-      // Fallback using extended address
-      MAC_SetFrameExtendedSrcAdr(F, H->Config.ExtendedAddress);
-  } else {
-    if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_SET &&
-        H->Pib.ShortAdr != MAC_CONST_USE_EXTENDED_ADDRESS &&
-        H->Pib.ShortAdr != MAC_CONST_ADDRESS_UNKNOWN)
-      // If associated and address assigned, use it
-      MAC_SetFrameShortSrcAdr(F, H->Pib.ShortAdr);
-    else
-      // Fallback using extended address
-      MAC_SetFrameExtendedSrcAdr(F, H->Config.ExtendedAddress);
-  }
-}
-
-void MAC_GenFrameSequence(MAC_Handle *H, MAC_Frame *F) {
-  MAC_SetFrameSequence(F, H->Pib.DSN++);
 }

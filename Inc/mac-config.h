@@ -1,6 +1,8 @@
 #ifndef __MAC_CONFIG_H__
 #define __MAC_CONFIG_H__
 
+#include <inttypes.h>
+
 #define MAC_CONFIG_MAX_PAYLOAD_LENGTH 16
 #define MAC_CONFIG_MAX_FRAME_POOL 32
 #define MAC_CONFIG_MAX_ADDRESS_LIST 20

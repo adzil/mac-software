@@ -3,8 +3,7 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include "mac-common.h"
-#include "mac-core.h"
+#include "mac-handle.h"
 
 void MAC_CmdSetFrameDstFromSrc(MAC_Frame *F, MAC_Frame *SF);
 void MAC_CmdSetFrameHeader(MAC_Handle *H, MAC_Frame *F);
@@ -15,6 +14,6 @@ void MAC_CmdDataRequestSend(MAC_Handle *H);
 void MAC_CmdAssocRequestHandler(MAC_Handle *H, MAC_Frame *F);
 void MAC_CmdAssocResponseHandler(MAC_Handle *H, MAC_Frame *F,
                                  MAC_FrameCommand *C);
-MAC_Status MAC_CmdExecute(MAC_Handle *H, MAC_Frame *F);
+MAC_Status MAC_CmdFrameHandler(MAC_Handle *H, MAC_Frame *F);
 
 #endif // __MAC_COMMAND_H__

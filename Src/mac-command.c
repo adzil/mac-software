@@ -26,7 +26,7 @@ void MAC_CmdAssocResponseSend(MAC_Handle *H, MAC_Frame *SF,
   MAC_SetFrameCmdAssocResponse(&C, ShortAdr, Status);
   MAC_FrameCommandEncode(F, &C);
 
-  MAC_CoreQueueFrame(H, F);
+  MAC_HandleQueueFrame(H, F);
 }
 
 void MAC_CmdAssocRequestSend(MAC_Handle *H) {
@@ -39,7 +39,7 @@ void MAC_CmdAssocRequestSend(MAC_Handle *H) {
   MAC_SetFrameCmdAssocRequest(&C);
   MAC_FrameCommandEncode(F, &C);
 
-  MAC_CoreQueueFrame(H, F);
+  MAC_HandleQueueFrame(H, F);
 }
 
 void MAC_CmdDataRequestSend(MAC_Handle *H) {
@@ -52,7 +52,7 @@ void MAC_CmdDataRequestSend(MAC_Handle *H) {
   MAC_SetFrameCmdDataRequest(&C);
   MAC_FrameCommandEncode(F, &C);
 
-  MAC_CoreQueueFrame(H, F);
+  MAC_HandleQueueFrame(H, F);
 }
 
 void MAC_CmdAssocRequestHandler(MAC_Handle *H, MAC_Frame *F) {
@@ -106,7 +106,7 @@ void MAC_CmdAssocResponseHandler(MAC_Handle *H, MAC_Frame *F,
   }
 }
 
-MAC_Status MAC_CmdExecute(MAC_Handle *H, MAC_Frame *F) {
+MAC_Status MAC_CmdFrameHandler(MAC_Handle *H, MAC_Frame *F) {
   MAC_FrameCommand C;
 
   // Decode command frame

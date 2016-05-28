@@ -2,9 +2,30 @@
 #define __MAC_FRAME_H__
 
 #include <inttypes.h>
+#include <string.h>
 #include "appdef.h"
 #include "mac-config.h"
+#include "mac-common.h"
 #include "crc16.h"
+
+/* Shorthand for frame copy */
+#define MAC_ReadByte(Dst, Src) do { \
+*((uint8_t *) Dst) = *((uint8_t *) Src); Src += 1; } while(0)
+#define MAC_ReadWord(Dst, Src) do { \
+*((uint16_t *) Dst) = __REV16(*((uint16_t *) Src)); Src += 2; } while(0)
+#define MAC_ReadDword(Dst, Src) do { \
+*((uint32_t *) Dst) = __REV(*((uint32_t *) Src)); Src += 4; } while(0)
+#define MAC_ReadStream(Dst, Src, Len) do {\
+memcpy(Dst, Src, Len); Src += Len; } while(0)
+
+#define MAC_WriteByte(Dst, Src) do { \
+*((uint8_t *) Dst) = *((uint8_t *) Src); Dst += 1; } while(0)
+#define MAC_WriteWord(Dst, Src) do { \
+*((uint16_t *) Dst) = __REV16(*((uint16_t *) Src)); Dst += 2; } while(0)
+#define MAC_WriteDword(Dst, Src) do { \
+*((uint32_t *) Dst) = __REV(*((uint32_t *) Src)); Dst += 4; } while(0)
+#define MAC_WriteStream(Dst, Src, Len) do {\
+memcpy(Dst, Src, Len); Dst += Len; } while(0)
 
 /* Enumeration types */
 typedef enum {
@@ -80,6 +101,12 @@ typedef struct {
   uint8_t Sequence;
 } MAC_Frame;
 
+/* Address list structure */
+typedef struct {
+  uint32_t ExtendedAdr;
+  uint16_t ShortAdr;
+} MAC_AdrList;
+
 /* Getter utility */
 force_inline uint16_t MAC_GetFrameAddressSize(MAC_FrameAddressMode Mode) {
   switch (Mode) {
@@ -150,8 +177,6 @@ force_inline void MAC_SetFrameNoSrcAdr(MAC_Frame *F) {
   F->FrameControl.SrcAdrMode = MAC_ADRMODE_NOT_PRESENT;
 }
 
-void MAC_GenFrameSrcAdr(MAC_Handle *H, MAC_Frame *F);
-
 // Ack Request (Frame Control)
 force_inline void MAC_SetFrameNoAckRequest(MAC_Frame *F) {
   F->FrameControl.AckRequest = MAC_ACKREQUEST_RESET;
@@ -179,8 +204,6 @@ force_inline void MAC_SetFrameType(MAC_Frame *F, MAC_FrameType Type) {
 force_inline void MAC_SetFrameSequence(MAC_Frame *F, uint8_t Seq) {
   F->Sequence = Seq;
 }
-
-void MAC_GenFrameSequence(MAC_Handle *H, MAC_Frame *F);
 
 // Command Frame-specific setters
 force_inline void MAC_SetFrameCmdAssocRequest(MAC_FrameCommand *C) {

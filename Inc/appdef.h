@@ -1,6 +1,8 @@
 #ifndef __APPDEF_H__
 #define __APPDEF_H__
 
+#include <inttypes.h>
+
 #define force_inline static inline __attribute__((always_inline))
 
 /* Reverse utility */

@@ -1,21 +1,40 @@
 #include "mac-core.h"
 
-/**
- *  This is the core function of the MAC such as data checking
- */
+void MAC_CoreFrameReceived(MAC_Handle *H, uint8_t *Data, size_t Length) {
+  MAC_Frame *F;
 
-void MAC_CoreSendFrame(MAC_Handle *H, MAC_Frame *F) {
-  MAC_QueueFrameAppend(&H->Mem.Tx, F);
-}
+  // Allocate new frame
+  F = MAC_MemFrameAlloc(&H->Mem);
+  if (!F) return;
 
-void MAC_CoreQueueFrame(MAC_Handle *H, MAC_Frame *F) {
-  if (F->FrameControl.FrameType != MAC_FRAMETYPE_ACK) {
-    MAC_QueueFramePush(&H->Mem.Tx, F);
-  } else if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
-    MAC_QueueFrameAppend(&H->Mem.Store, F);
-  } else {
-    MAC_CoreSendFrame(H, F);
+  // Convert received data to frame structure
+  if (MAC_FrameDecode(F, Data, Length) != MAC_STATUS_OK) {
+    MAC_MemFrameFree(&H->Mem, F);
+    return;
   }
+  // Check if the frame is acknowledgement
+  // TODO: BACK-ACK check
+  // Check frame addressing
+  if (MAC_CoreCheckAddressing(H, F) != MAC_STATUS_OK) {
+    MAC_MemFrameFree(&H->Mem, F);
+    return;
+  }
+
+  // Process the packet
+  switch (F->FrameControl.FrameType) {
+    case MAC_FRAMETYPE_DATA:
+      // TODO: Pass data to higher layer
+      break;
+
+    case MAC_FRAMETYPE_COMMAND:
+      MAC_CmdFrameHandler(H, F);
+      break;
+
+    default:
+      break;
+  }
+
+  MAC_MemFrameFree(&H->Mem, F);
 }
 
 MAC_Status MAC_CoreCheckAddressing(MAC_Handle *H, MAC_Frame *F) {
