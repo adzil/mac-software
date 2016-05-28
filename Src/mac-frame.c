@@ -1,7 +1,8 @@
+#include <mac-frame.h>
 #include "mac-frame.h"
 
 /* Encode the structured frame into data stream */
-MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data) {
+MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data, size_t *Len) {
   uint8_t *DataPtr;
   uint16_t Checksum;
 
@@ -20,7 +21,7 @@ MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data) {
       MAC_WriteWord(Data, &F->Address.Dst.Short);
       break;
     case MAC_ADRMODE_EXTENDED:
-      MAC_WriteWord(Data, &F->Address.Dst.Extended);
+      MAC_WriteDword(Data, &F->Address.Dst.Extended);
       break;
     default:
       break;
@@ -30,7 +31,7 @@ MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data) {
       MAC_WriteWord(Data, &F->Address.Src.Short);
       break;
     case MAC_ADRMODE_EXTENDED:
-      MAC_WriteWord(Data, &F->Address.Src.Extended);
+      MAC_WriteDword(Data, &F->Address.Src.Extended);
       break;
     default:
       break;
@@ -44,6 +45,8 @@ MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data) {
   // Calculate checksum
   Checksum = CRC_Checksum(DataPtr, (size_t)(Data - DataPtr));
   MAC_WriteWord(Data, &Checksum);
+
+  *Len = (size_t)(Data - DataPtr);
 
   return MAC_STATUS_OK;
 }
@@ -122,6 +125,9 @@ void MAC_FrameCommandDecode(MAC_Frame *F, MAC_FrameCommand *C) {
 
   // Set data pointer
   Data = F->Payload.Data;
+  // Zero out existing data on command frame
+  C->CommandId = MAC_COMMAND_ID_ASSOC_REQUEST;
+  C->AssocStatus = MAC_ASSOCSTATUS_SUCCESS;
 
   // Get the command ID
   MAC_ReadByte(&C->CommandId, Data);

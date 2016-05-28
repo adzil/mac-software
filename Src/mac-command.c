@@ -1,3 +1,4 @@
+#include <mac-frame.h>
 #include "mac-command.h"
 
 void MAC_CmdSetFrameDstFromSrc(MAC_Frame *F, MAC_Frame *SF) {
@@ -36,6 +37,7 @@ void MAC_CmdAssocRequestSend(MAC_Instance *H) {
   F = MAC_MemFrameAlloc(&H->Mem);
   if (!F) return;
   MAC_CmdSetFrameHeader(H, F);
+  MAC_SetFrameNoDstAdr(F);
   MAC_SetFrameCmdAssocRequest(&C);
   MAC_FrameCommandEncode(F, &C);
 
@@ -107,7 +109,7 @@ void MAC_CmdAssocResponseHandler(MAC_Instance *H, MAC_Frame *F,
 }
 
 void MAC_CmdDataRequestHandler(MAC_Instance *H, MAC_Frame *F) {
-
+  MAC_TransmitLookupFrame(H, F->FrameControl.SrcAdrMode, F->Address.Src);
 }
 
 MAC_Status MAC_CmdFrameHandler(MAC_Instance *H, MAC_Frame *F) {
@@ -137,7 +139,7 @@ MAC_Status MAC_CmdFrameHandler(MAC_Instance *H, MAC_Frame *F) {
       // Only coordinator should process data request
       if (H->Pib.VpanCoordinator != MAC_PIB_VPAN_COORDINATOR)
         return MAC_STATUS_INVALID_COMMAND;
-
+      MAC_CmdDataRequestHandler(H, F);
       break;
 
     default:

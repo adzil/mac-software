@@ -1,14 +1,23 @@
-#include <mac-instance.h>
 #include "mac-instance.h"
 
-void MAC_Init(MAC_Instance *H) {
+void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
+              MAC_PibVpanCoordinator VpanCoord) {
   // Memory initialization
   MAC_MemPoolInit(&H->Mem);
   MAC_MemQueueInit(&H->Mem);
+  // Pib initialization
+  H->Pib.CoordShortAdr = MAC_CONST_ADDRESS_UNKNOWN;
+  H->Pib.CoordExtendedAdr = 0;
+  H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
+  H->Pib.ShortAdr = MAC_CONST_ADDRESS_UNKNOWN;
+  H->Pib.DSN = 0;
+  H->Pib.VpanCoordinator = VpanCoord;
+  // Config initialization
+  H->Config.ExtendedAddress = ExtendedAdr;
 }
 
 void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F) {
-  if (F->FrameControl.FrameType != MAC_FRAMETYPE_ACK) {
+  if (F->FrameControl.FrameType == MAC_FRAMETYPE_ACK) {
     F = MAC_QueueFramePush(&H->Mem.Tx, F);
     if (F) MAC_MemFrameFree(&H->Mem, F);
   } else if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {

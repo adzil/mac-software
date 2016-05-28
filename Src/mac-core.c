@@ -1,3 +1,4 @@
+#include <mac-instance.h>
 #include "mac-core.h"
 
 void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
@@ -35,6 +36,20 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
   }
 
   MAC_MemFrameFree(&H->Mem, F);
+}
+
+size_t MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data) {
+  MAC_Frame *F;
+  size_t Length;
+
+  Length = 0;
+  F = MAC_TransmitGetFrame(H);
+  if (F)
+    MAC_FrameEncode(F, Data, &Length);
+
+  MAC_MemFrameFree(&H->Mem, F);
+
+  return Length;
 }
 
 MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {

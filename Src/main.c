@@ -1,10 +1,25 @@
 #include <stdio.h>
 #include "mac-core.h"
 
-MAC_Instance MAC;
-
 int main(void) {
-  MAC_Init(&MAC);
+  MAC_Instance Coord;
+  MAC_Instance Device;
+  uint8_t Buffer[128];
+  size_t Length;
+
+  MAC_Frame F;
+  MAC_FrameCommand C;
+
+  MAC_Init(&Coord, 0x1, MAC_PIB_VPAN_COORDINATOR);
+  MAC_Init(&Device, 0x2, MAC_PIB_VPAN_DEVICE);
+
+  MAC_CmdAssocRequestSend(&Device);
+  Length = MAC_CoreFrameSend(&Device, Buffer);
+  MAC_CoreFrameReceived(&Coord, Buffer, Length);
+  Length = MAC_CoreFrameSend(&Coord, Buffer);
+
+  MAC_FrameDecode(&F, Buffer, Length);
+  MAC_FrameCommandDecode(&F, &C);
 
   return 0;
 }

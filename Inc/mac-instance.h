@@ -17,7 +17,8 @@ typedef struct {
   MAC_Mem Mem;
 } MAC_Instance;
 
-void MAC_Init(MAC_Instance *H);
+void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
+              MAC_PibVpanCoordinator VpanCoord);
 void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F);
 void MAC_GenFrameSrcAdr(MAC_Instance *H, MAC_Frame *F);
 

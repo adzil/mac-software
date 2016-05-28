@@ -121,7 +121,7 @@ force_inline uint16_t MAC_GetFrameAddressSize(MAC_FrameAddressMode Mode) {
   }
 }
 
-MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data);
+MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data, size_t *Len);
 MAC_Status MAC_FrameDecode(MAC_Frame *F, uint8_t *Data, size_t Len);
 void MAC_FrameCommandEncode(MAC_Frame *F, MAC_FrameCommand *C);
 void MAC_FrameCommandDecode(MAC_Frame *F, MAC_FrameCommand *C);
@@ -135,7 +135,7 @@ force_inline void MAC_SetFrameShortDstAdr(MAC_Frame *F, uint16_t Adr) {
 
 force_inline void MAC_SetFrameExtendedDstAdr(MAC_Frame *F, uint32_t Adr) {
   F->FrameControl.DstAdrMode = MAC_ADRMODE_EXTENDED;
-  F->Address.Dst.Short = Adr;
+  F->Address.Dst.Extended = Adr;
 }
 
 force_inline void MAC_SetFrameNoDstAdr(MAC_Frame *F) {
@@ -170,7 +170,7 @@ force_inline void MAC_SetFrameShortSrcAdr(MAC_Frame *F, uint16_t Adr) {
 
 force_inline void MAC_SetFrameExtendedSrcAdr(MAC_Frame *F, uint32_t Adr) {
   F->FrameControl.SrcAdrMode = MAC_ADRMODE_EXTENDED;
-  F->Address.Src.Short = Adr;
+  F->Address.Src.Extended = Adr;
 }
 
 force_inline void MAC_SetFrameNoSrcAdr(MAC_Frame *F) {
