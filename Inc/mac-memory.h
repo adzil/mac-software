@@ -43,7 +43,7 @@ force_inline MAC_Frame *MAC_MemFrameAlloc(MAC_Mem *M) {
   return (MAC_Frame *) MAC_MemAlloc(&M->Frame);
 }
 
-force_inline void *MAC_MemFrameFree(MAC_Mem *M, MAC_Frame *F) {
+force_inline void MAC_MemFrameFree(MAC_Mem *M, MAC_Frame *F) {
   MAC_MemFree(&M->Frame, (void *) F);
 }
 
@@ -51,7 +51,7 @@ force_inline MAC_AdrList *MAC_MemAdrListAlloc(MAC_Mem *M) {
   return (MAC_AdrList *) MAC_MemAlloc(&M->AdrList);
 }
 
-force_inline void *MAC_MemAdrListFree(MAC_Mem *M, MAC_AdrList *A) {
+force_inline void MAC_MemAdrListFree(MAC_Mem *M, MAC_AdrList *A) {
   MAC_MemFree(&M->AdrList, (void *) A);
 }
 

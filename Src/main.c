@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include "mac-core.h"
 
-MAC_Handle MAC;
+MAC_Instance MAC;
 
 int main(void) {
-  MAC_HandleInit(&MAC);
+  MAC_Init(&MAC);
 
   return 0;
 }

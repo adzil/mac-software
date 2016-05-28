@@ -5,7 +5,7 @@ void MAC_CmdSetFrameDstFromSrc(MAC_Frame *F, MAC_Frame *SF) {
   MAC_SetFrameDstAdr(F, SF->FrameControl.SrcAdrMode, SF->Address.Src);
 }
 
-void MAC_CmdSetFrameHeader(MAC_Handle *H, MAC_Frame *F) {
+void MAC_CmdSetFrameHeader(MAC_Instance *H, MAC_Frame *F) {
   // Generate source addressing
   MAC_GenFrameSrcAdr(H, F);
   // Set frame controls
@@ -14,7 +14,7 @@ void MAC_CmdSetFrameHeader(MAC_Handle *H, MAC_Frame *F) {
   MAC_SetFrameType(F, MAC_FRAMETYPE_COMMAND);
 }
 
-void MAC_CmdAssocResponseSend(MAC_Handle *H, MAC_Frame *SF,
+void MAC_CmdAssocResponseSend(MAC_Instance *H, MAC_Frame *SF,
                               MAC_FrameAssocStatus Status, uint16_t ShortAdr) {
   MAC_Frame *F;
   MAC_FrameCommand C;
@@ -26,10 +26,10 @@ void MAC_CmdAssocResponseSend(MAC_Handle *H, MAC_Frame *SF,
   MAC_SetFrameCmdAssocResponse(&C, ShortAdr, Status);
   MAC_FrameCommandEncode(F, &C);
 
-  MAC_HandleQueueFrame(H, F);
+  MAC_TransmitPutFrame(H, F);
 }
 
-void MAC_CmdAssocRequestSend(MAC_Handle *H) {
+void MAC_CmdAssocRequestSend(MAC_Instance *H) {
   MAC_Frame *F;
   MAC_FrameCommand C;
 
@@ -39,10 +39,10 @@ void MAC_CmdAssocRequestSend(MAC_Handle *H) {
   MAC_SetFrameCmdAssocRequest(&C);
   MAC_FrameCommandEncode(F, &C);
 
-  MAC_HandleQueueFrame(H, F);
+  MAC_TransmitPutFrame(H, F);
 }
 
-void MAC_CmdDataRequestSend(MAC_Handle *H) {
+void MAC_CmdDataRequestSend(MAC_Instance *H) {
   MAC_Frame *F;
   MAC_FrameCommand C;
 
@@ -52,10 +52,10 @@ void MAC_CmdDataRequestSend(MAC_Handle *H) {
   MAC_SetFrameCmdDataRequest(&C);
   MAC_FrameCommandEncode(F, &C);
 
-  MAC_HandleQueueFrame(H, F);
+  MAC_TransmitPutFrame(H, F);
 }
 
-void MAC_CmdAssocRequestHandler(MAC_Handle *H, MAC_Frame *F) {
+void MAC_CmdAssocRequestHandler(MAC_Instance *H, MAC_Frame *F) {
   MAC_AdrList *A;
   MAC_FrameAddress Adr;
 
@@ -86,7 +86,7 @@ void MAC_CmdAssocRequestHandler(MAC_Handle *H, MAC_Frame *F) {
   }
 }
 
-void MAC_CmdAssocResponseHandler(MAC_Handle *H, MAC_Frame *F,
+void MAC_CmdAssocResponseHandler(MAC_Instance *H, MAC_Frame *F,
                                  MAC_FrameCommand *C) {
   if (C->AssocStatus == MAC_ASSOCSTATUS_SUCCESS) {
     // Set coordinator address
@@ -106,7 +106,11 @@ void MAC_CmdAssocResponseHandler(MAC_Handle *H, MAC_Frame *F,
   }
 }
 
-MAC_Status MAC_CmdFrameHandler(MAC_Handle *H, MAC_Frame *F) {
+void MAC_CmdDataRequestHandler(MAC_Instance *H, MAC_Frame *F) {
+
+}
+
+MAC_Status MAC_CmdFrameHandler(MAC_Instance *H, MAC_Frame *F) {
   MAC_FrameCommand C;
 
   // Decode command frame

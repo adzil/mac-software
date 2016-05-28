@@ -1,22 +1,25 @@
-#include "mac-handle.h"
+#include <mac-instance.h>
+#include "mac-instance.h"
 
-void MAC_HandleInit(MAC_Handle *H) {
+void MAC_Init(MAC_Instance *H) {
   // Memory initialization
   MAC_MemPoolInit(&H->Mem);
   MAC_MemQueueInit(&H->Mem);
 }
 
-void MAC_HandleQueueFrame(MAC_Handle *H, MAC_Frame *F) {
+void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F) {
   if (F->FrameControl.FrameType != MAC_FRAMETYPE_ACK) {
-    MAC_QueueFramePush(&H->Mem.Tx, F);
+    F = MAC_QueueFramePush(&H->Mem.Tx, F);
+    if (F) MAC_MemFrameFree(&H->Mem, F);
   } else if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
-    MAC_QueueFrameAppend(&H->Mem.Store, F);
+    F = MAC_QueueFrameAppend(&H->Mem.Store, F);
+    if (F) MAC_MemFrameFree(&H->Mem, F);
   } else {
-    MAC_QueueFrameAppend(&H->Mem.Tx, F);
+    MAC_TransmitSendFrame(H, F);
   }
 }
 
-void MAC_GenFrameSrcAdr(MAC_Handle *H, MAC_Frame *F) {
+void MAC_GenFrameSrcAdr(MAC_Instance *H, MAC_Frame *F) {
   if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
     if (F->FrameControl.DstAdrMode == MAC_ADRMODE_SHORT)
       // No source address for short destination addresses

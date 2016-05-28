@@ -1,6 +1,6 @@
 #include "mac-core.h"
 
-void MAC_CoreFrameReceived(MAC_Handle *H, uint8_t *Data, size_t Length) {
+void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
   MAC_Frame *F;
 
   // Allocate new frame
@@ -37,7 +37,7 @@ void MAC_CoreFrameReceived(MAC_Handle *H, uint8_t *Data, size_t Length) {
   MAC_MemFrameFree(&H->Mem, F);
 }
 
-MAC_Status MAC_CoreCheckAddressing(MAC_Handle *H, MAC_Frame *F) {
+MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
   // Check the destination addressing
   switch (F->FrameControl.DstAdrMode) {
     case MAC_ADRMODE_NOT_PRESENT:
