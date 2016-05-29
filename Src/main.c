@@ -1,6 +1,3 @@
-#include <mac-instance.h>
-#include <mac-pib.h>
-#include <mac-frame.h>
 #include "mac-core.h"
 
 int main(void) {
@@ -107,6 +104,31 @@ int main(void) {
 
   MAC_CoreFrameSend(&Device[2], Buffer, &Length);
   MAC_CoreFrameReceived(&Coord, Buffer, Length);
+
+  printf("- Re-Association Request Test\n");
+
+  for (i = 2; i >= 0; i--) {
+    // Reset association status
+    Device[i].Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
+    Device[i].Pib.ShortAdr = MAC_CONST_ADDRESS_UNKNOWN;
+    // Restart association
+    MAC_CmdAssocRequestSend(&Device[i]);
+    MAC_CoreFrameSend(&Device[i], Buffer, &Length);
+    MAC_CoreFrameReceived(&Coord, Buffer, Length);
+  }
+
+  for (i = 0; i < 3; i++) {
+    MAC_CmdDataRequestSend(&Device[i]);
+    MAC_CoreFrameSend(&Device[i], Buffer, &Length);
+    MAC_CoreFrameReceived(&Coord, Buffer, Length);
+  }
+
+  for (i = 0; i < 3; i++) {
+    MAC_CoreFrameSend(&Coord, Buffer, &Length);
+    MAC_CoreFrameReceived(&Device[0], Buffer, Length);
+    MAC_CoreFrameReceived(&Device[1], Buffer, Length);
+    MAC_CoreFrameReceived(&Device[2], Buffer, Length);
+  }
 
   return 0;
 }
