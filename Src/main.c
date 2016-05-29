@@ -21,6 +21,10 @@ int main(void) {
   MAC_CoreFrameSend(&Coord, Buffer, &Length);
   MAC_CoreFrameReceived(&Device, Buffer, Length);
 
+  MAC_CmdDataRequestSend(&Device);
+  MAC_CoreFrameSend(&Device, Buffer, &Length);
+  MAC_CoreFrameReceived(&Coord, Buffer, Length);
+
   return 0;
 }
 

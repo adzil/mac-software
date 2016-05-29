@@ -46,7 +46,7 @@ MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data, size_t *Len) {
   Checksum = CRC_Checksum(DataPtr, (size_t)(Data - DataPtr));
   MAC_WriteWord(Data, &Checksum);
 
-  *Len = (size_t)(Data - DataPtr);
+  *Len = Data - DataPtr;
 
   return MAC_STATUS_OK;
 }

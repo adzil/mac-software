@@ -17,6 +17,92 @@ typedef struct {
   MAC_Mem Mem;
 } MAC_Instance;
 
+#define MAC_DEBUG
+
+#ifdef MAC_DEBUG
+
+#include <stdio.h>
+force_inline void MAC_Debug(MAC_Instance *H, const char *Msg) {
+  printf("(%x/%x) %s\n", H->Config.ExtendedAddress, H->Pib.ShortAdr, Msg);
+}
+
+force_inline void MAC_FrameDebug(MAC_Instance *H, MAC_Frame *F) {
+  MAC_FrameCommand C;
+  int i;
+
+  printf("(%x/%x) ", H->Config.ExtendedAddress, H->Pib.ShortAdr);
+  switch (F->FrameControl.SrcAdrMode) {
+    case MAC_ADRMODE_NOT_PRESENT:
+      printf("[NA]");
+      break;
+
+    case MAC_ADRMODE_SHORT:
+      printf("[S:%x]", F->Address.Src.Short);
+      break;
+
+    case MAC_ADRMODE_EXTENDED:
+      printf("[X:%x]", F->Address.Src.Extended);
+      break;
+  }
+  printf("-->");
+  switch (F->FrameControl.DstAdrMode) {
+    case MAC_ADRMODE_NOT_PRESENT:
+      printf("[NA]");
+      break;
+
+    case MAC_ADRMODE_SHORT:
+      printf("[S:%x]", F->Address.Dst.Short);
+      break;
+
+    case MAC_ADRMODE_EXTENDED:
+      printf("[X:%x]", F->Address.Dst.Extended);
+      break;
+  }
+
+  printf(" SEQN: %d TYPE: ", F->Sequence);
+  switch(F->FrameControl.FrameType) {
+    case MAC_FRAMETYPE_DATA:
+      printf("Data PAYLOAD: ");
+      for (i = 0; i < F->Payload.Length; i++)
+        printf("%2x ", F->Payload.Data[i]);
+      break;
+
+    case MAC_FRAMETYPE_COMMAND:
+      printf("Command PAYLOAD: ");
+      MAC_FrameCommandDecode(F, &C);
+      switch (C.CommandId) {
+        case MAC_COMMAND_ID_ASSOC_REQUEST:
+          printf("AssocRequest");
+          break;
+
+        case MAC_COMMAND_ID_ASSOC_RESPONSE:
+          printf("AssocResponse EXTRA: ");
+          switch (C.AssocStatus) {
+            case MAC_ASSOCSTATUS_SUCCESS:
+              printf("SUCCESS WITH ADDRESS %x", C.ShortAddress);
+              break;
+
+            case MAC_ASSOCSTATUS_FAILED:
+              printf("FAILED");
+              break;
+          }
+          break;
+
+        case MAC_COMMAND_ID_DATA_REQUEST:
+          printf("DataRequest");
+          break;
+      }
+      break;
+
+    case MAC_FRAMETYPE_ACK:
+      printf("Ack");
+      break;
+  }
+
+  printf("\n");
+}
+#endif
+
 void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
               MAC_PibVpanCoordinator VpanCoord);
 void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F);
@@ -45,10 +131,5 @@ force_inline MAC_Frame *MAC_TransmitGetFrame(MAC_Instance *H) {
 force_inline void MAC_GenFrameSequence(MAC_Instance *H, MAC_Frame *F) {
   MAC_SetFrameSequence(F, H->Pib.DSN++);
 }
-
-/*
-force_inline MAC_Frame *MAC_HandlePopQueuedFrame(MAC_Instance *H) {
-
-}*/
 
 #endif // __MAC_HANDLE_H__

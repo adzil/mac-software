@@ -16,6 +16,11 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
     MAC_MemFrameFree(&H->Mem, F);
     return;
   }
+
+#ifdef MAC_DEBUG
+  MAC_FrameDebug(H, F);
+#endif
+
   // Check if the frame is acknowledgement
   // TODO: BACK-ACK check
   // Check frame addressing
@@ -44,7 +49,7 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
 void MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data, size_t *Len) {
   MAC_Frame *F;
 
-  Len = 0;
+  *Len = 0;
   F = MAC_TransmitGetFrame(H);
   if (F) {
     MAC_FrameEncode(F, Data, Len);
