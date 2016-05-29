@@ -39,7 +39,7 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
   }
 
 #ifdef MAC_DEBUG
-  MAC_DebugFrame(H, F);
+  MAC_DebugFrame(H, F, MAC_DEBUG_RCV);
 #endif
 
   MAC_MemFrameFree(&H->Mem, F);
@@ -52,6 +52,9 @@ void MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data, size_t *Len) {
   F = MAC_TransmitGetFrame(H);
   if (F) {
     MAC_FrameEncode(F, Data, Len);
+#ifdef MAC_DEBUG
+    MAC_DebugFrame(H, F, MAC_DEBUG_SND);
+#endif
     MAC_MemFrameFree(&H->Mem, F);
   }
 }

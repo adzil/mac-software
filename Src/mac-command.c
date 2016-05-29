@@ -9,6 +9,7 @@ void MAC_CmdSetFrameHeader(MAC_Instance *H, MAC_Frame *F) {
   // Generate source addressing
   MAC_GenFrameSrcAdr(H, F);
   // Set frame controls
+  MAC_GenFrameSequence(H, F);
   MAC_SetFrameAckRequest(F);
   MAC_SetFrameNoPending(F);
   MAC_SetFrameType(F, MAC_FRAMETYPE_COMMAND);
@@ -35,8 +36,8 @@ void MAC_CmdAssocRequestSend(MAC_Instance *H) {
 
   F = MAC_MemFrameAlloc(&H->Mem);
   if (!F) return;
-  MAC_CmdSetFrameHeader(H, F);
   MAC_SetFrameNoDstAdr(F);
+  MAC_CmdSetFrameHeader(H, F);
   MAC_SetFrameCmdAssocRequest(&C);
   MAC_FrameCommandEncode(F, &C);
 
@@ -49,8 +50,8 @@ void MAC_CmdDataRequestSend(MAC_Instance *H) {
 
   F = MAC_MemFrameAlloc(&H->Mem);
   if (!F) return;
-  MAC_CmdSetFrameHeader(H, F);
   MAC_SetFrameNoDstAdr(F);
+  MAC_CmdSetFrameHeader(H, F);
   MAC_SetFrameCmdDataRequest(&C);
   MAC_FrameCommandEncode(F, &C);
 

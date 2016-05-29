@@ -10,7 +10,7 @@ void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
   H->Pib.CoordExtendedAdr = 0;
   H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
   H->Pib.ShortAdr = MAC_CONST_ADDRESS_UNKNOWN;
-  H->Pib.DSN = 0;
+  H->Pib.DSN = (uint8_t) rand();
   H->Pib.VpanCoordinator = VpanCoord;
   // Config initialization
   H->Config.ExtendedAddress = ExtendedAdr;
@@ -21,6 +21,9 @@ void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F) {
     F = MAC_QueueFramePush(&H->Mem.Tx, F);
     if (F) MAC_MemFrameFree(&H->Mem, F);
   } else if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
+#ifdef MAC_DEBUG
+    MAC_DebugFrame(H, F, MAC_DEBUG_QUE);
+#endif
     F = MAC_QueueFrameAppend(&H->Mem.Store, F);
     if (F) MAC_MemFrameFree(&H->Mem, F);
   } else {

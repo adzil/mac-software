@@ -1,6 +1,7 @@
 #ifndef __MAC_HANDLE_H__
 #define __MAC_HANDLE_H__
 
+#include <stdlib.h>
 /* Include all mac sub-functions */
 #include "mac-common.h"
 #include "mac-config.h"
@@ -20,18 +21,43 @@ typedef struct {
 #define MAC_DEBUG
 
 #ifdef MAC_DEBUG
+typedef enum {
+  MAC_DEBUG_RCV,
+  MAC_DEBUG_SND,
+  MAC_DEBUG_QUE,
+  MAC_DEBUG_RDY
+} MAC_DebugDir;
 
 #include <stdio.h>
 force_inline void MAC_DebugStamp(MAC_Instance *H) {
   printf("(%x/%x) ", H->Config.ExtendedAddress, H->Pib.ShortAdr);
 }
 
-force_inline void MAC_DebugFrame(MAC_Instance *H, MAC_Frame *F) {
+force_inline void MAC_DebugFrame(MAC_Instance *H, MAC_Frame *F,
+                                 MAC_DebugDir Dir) {
   MAC_FrameCommand C;
   int i;
 
   MAC_DebugStamp(H);
-  printf("FRAME DBG - ADDRESS: ");
+  printf("FRAME ");
+  switch (Dir) {
+    case MAC_DEBUG_RCV:
+      printf("RCV");
+      break;
+
+    case MAC_DEBUG_SND:
+      printf("SND");
+      break;
+
+    case MAC_DEBUG_QUE:
+      printf("QUE");
+      break;
+
+    case MAC_DEBUG_RDY:
+      printf("RDY");
+      break;
+  }
+  printf(" - ADDRESS: ");
   switch (F->FrameControl.SrcAdrMode) {
     case MAC_ADRMODE_NOT_PRESENT:
       printf("[NA]");
@@ -110,6 +136,9 @@ void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F);
 void MAC_GenFrameSrcAdr(MAC_Instance *H, MAC_Frame *F);
 
 force_inline void MAC_TransmitSendFrame(MAC_Instance *H, MAC_Frame *F) {
+#ifdef MAC_DEBUG
+  MAC_DebugFrame(H, F, MAC_DEBUG_RDY);
+#endif
   F = MAC_QueueFrameAppend(&H->Mem.Tx, F);
   if (F) MAC_MemFrameFree(&H->Mem, F);
 }
