@@ -22,15 +22,16 @@ typedef struct {
 #ifdef MAC_DEBUG
 
 #include <stdio.h>
-force_inline void MAC_Debug(MAC_Instance *H, const char *Msg) {
-  printf("(%x/%x) %s\n", H->Config.ExtendedAddress, H->Pib.ShortAdr, Msg);
+force_inline void MAC_DebugStamp(MAC_Instance *H) {
+  printf("(%x/%x) ", H->Config.ExtendedAddress, H->Pib.ShortAdr);
 }
 
-force_inline void MAC_FrameDebug(MAC_Instance *H, MAC_Frame *F) {
+force_inline void MAC_DebugFrame(MAC_Instance *H, MAC_Frame *F) {
   MAC_FrameCommand C;
   int i;
 
-  printf("(%x/%x) ", H->Config.ExtendedAddress, H->Pib.ShortAdr);
+  MAC_DebugStamp(H);
+  printf("FRAME DBG - ADDRESS: ");
   switch (F->FrameControl.SrcAdrMode) {
     case MAC_ADRMODE_NOT_PRESENT:
       printf("[NA]");
@@ -76,10 +77,10 @@ force_inline void MAC_FrameDebug(MAC_Instance *H, MAC_Frame *F) {
           break;
 
         case MAC_COMMAND_ID_ASSOC_RESPONSE:
-          printf("AssocResponse EXTRA: ");
+          printf("AssocResponse MSG: ");
           switch (C.AssocStatus) {
             case MAC_ASSOCSTATUS_SUCCESS:
-              printf("SUCCESS WITH ADDRESS %x", C.ShortAddress);
+              printf("SUCCESS, SHORT ADR: %x", C.ShortAddress);
               break;
 
             case MAC_ASSOCSTATUS_FAILED:

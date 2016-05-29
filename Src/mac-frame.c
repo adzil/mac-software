@@ -1,4 +1,3 @@
-#include <mac-frame.h>
 #include "mac-frame.h"
 
 /* Encode the structured frame into data stream */
@@ -114,7 +113,7 @@ void MAC_FrameCommandEncode(MAC_Frame *F, MAC_FrameCommand *C) {
   F->Payload.Length = 1;
   // Check for command ID
   if (C->CommandId == MAC_COMMAND_ID_ASSOC_RESPONSE) {
-    MAC_WriteDword(Data, &C->ShortAddress);
+    MAC_WriteWord(Data, &C->ShortAddress);
     MAC_WriteByte(Data, &C->AssocStatus);
     F->Payload.Length = 4;
   }
@@ -133,7 +132,7 @@ void MAC_FrameCommandDecode(MAC_Frame *F, MAC_FrameCommand *C) {
   MAC_ReadByte(&C->CommandId, Data);
   // Check for command ID
   if (C->CommandId == MAC_COMMAND_ID_ASSOC_RESPONSE) {
-    MAC_ReadDword(&C->ShortAddress, Data);
+    MAC_ReadWord(&C->ShortAddress, Data);
     MAC_ReadByte(&C->AssocStatus, Data);
   }
 }

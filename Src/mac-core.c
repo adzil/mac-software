@@ -1,4 +1,3 @@
-#include <mac-instance.h>
 #include "mac-core.h"
 
 void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
@@ -16,10 +15,6 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
     MAC_MemFrameFree(&H->Mem, F);
     return;
   }
-
-#ifdef MAC_DEBUG
-  MAC_FrameDebug(H, F);
-#endif
 
   // Check if the frame is acknowledgement
   // TODO: BACK-ACK check
@@ -42,6 +37,10 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
     default:
       break;
   }
+
+#ifdef MAC_DEBUG
+  MAC_DebugFrame(H, F);
+#endif
 
   MAC_MemFrameFree(&H->Mem, F);
 }
@@ -68,10 +67,16 @@ MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
 
     case MAC_ADRMODE_SHORT:
       // This is only available when the client is associated
-      if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_SET ||
-          H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR)
-        if (F->Address.Dst.Short == H->Pib.ShortAdr)
+      if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
+        if (H->Pib.ShortAdr != MAC_CONST_USE_EXTENDED_ADDRESS &&
+            H->Pib.ShortAdr != MAC_CONST_ADDRESS_UNKNOWN &&
+            H->Pib.ShortAdr == F->Address.Dst.Short)
           break;
+      } else {
+        if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_SET &&
+            H->Pib.ShortAdr == F->Address.Dst.Short)
+          break;
+      }
       return MAC_STATUS_INVALID_DESTINATION;
 
     case MAC_ADRMODE_EXTENDED:
