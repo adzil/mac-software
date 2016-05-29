@@ -51,6 +51,7 @@ void MAC_CmdDataRequestSend(MAC_Instance *H) {
   F = MAC_MemFrameAlloc(&H->Mem);
   if (!F) return;
   MAC_CmdSetFrameHeader(H, F);
+  MAC_SetFrameNoDstAdr(F);
   MAC_SetFrameCmdDataRequest(&C);
   MAC_FrameCommandEncode(F, &C);
 

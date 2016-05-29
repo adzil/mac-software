@@ -16,7 +16,11 @@ int main(void) {
   MAC_CmdAssocRequestSend(&Device);
   Length = MAC_CoreFrameSend(&Device, Buffer);
   MAC_CoreFrameReceived(&Coord, Buffer, Length);
+  MAC_CmdDataRequestSend(&Device);
+  Length = MAC_CoreFrameSend(&Device, Buffer);
+  MAC_CoreFrameReceived(&Coord, Buffer, Length);
   Length = MAC_CoreFrameSend(&Coord, Buffer);
+  MAC_CoreFrameReceived(&Device, Buffer, Length);
 
   MAC_FrameDecode(&F, Buffer, Length);
   MAC_FrameCommandDecode(&F, &C);

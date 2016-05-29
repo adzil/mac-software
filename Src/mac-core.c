@@ -44,10 +44,10 @@ size_t MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data) {
 
   Length = 0;
   F = MAC_TransmitGetFrame(H);
-  if (F)
+  if (F) {
     MAC_FrameEncode(F, Data, &Length);
-
-  MAC_MemFrameFree(&H->Mem, F);
+    MAC_MemFrameFree(&H->Mem, F);
+  }
 
   return Length;
 }
