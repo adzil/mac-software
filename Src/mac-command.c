@@ -93,9 +93,9 @@ void MAC_CmdAssocResponseHandler(MAC_Instance *H, MAC_Frame *F,
                                  MAC_FrameCommand *C) {
   if (C->AssocStatus == MAC_ASSOCSTATUS_SUCCESS) {
     // Set coordinator address
-    if (F->FrameControl.SrcAdrMode != MAC_ADRMODE_SHORT) {
+    if (F->FrameControl.SrcAdrMode == MAC_ADRMODE_SHORT) {
       H->Pib.CoordShortAdr = F->Address.Src.Short;
-    } else if (F->FrameControl.SrcAdrMode != MAC_ADRMODE_EXTENDED) {
+    } else if (F->FrameControl.SrcAdrMode == MAC_ADRMODE_EXTENDED) {
       H->Pib.CoordShortAdr = MAC_CONST_USE_EXTENDED_ADDRESS;
       H->Pib.CoordExtendedAdr = F->Address.Src.Extended;
     } else {

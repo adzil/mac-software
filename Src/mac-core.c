@@ -4,6 +4,9 @@
 void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
   MAC_Frame *F;
 
+  // Abort frame decoding on zero-length
+  if (!Length) return;
+
   // Allocate new frame
   F = MAC_MemFrameAlloc(&H->Mem);
   if (!F) return;
@@ -38,18 +41,15 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
   MAC_MemFrameFree(&H->Mem, F);
 }
 
-size_t MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data) {
+void MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data, size_t *Len) {
   MAC_Frame *F;
-  size_t Length;
 
-  Length = 0;
+  Len = 0;
   F = MAC_TransmitGetFrame(H);
   if (F) {
-    MAC_FrameEncode(F, Data, &Length);
+    MAC_FrameEncode(F, Data, Len);
     MAC_MemFrameFree(&H->Mem, F);
   }
-
-  return Length;
 }
 
 MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {

@@ -7,23 +7,19 @@ int main(void) {
   uint8_t Buffer[128];
   size_t Length;
 
-  MAC_Frame F;
-  MAC_FrameCommand C;
-
   MAC_Init(&Coord, 0x1, MAC_PIB_VPAN_COORDINATOR);
   MAC_Init(&Device, 0x2, MAC_PIB_VPAN_DEVICE);
 
   MAC_CmdAssocRequestSend(&Device);
-  Length = MAC_CoreFrameSend(&Device, Buffer);
+  MAC_CoreFrameSend(&Device, Buffer, &Length);
   MAC_CoreFrameReceived(&Coord, Buffer, Length);
-  MAC_CmdDataRequestSend(&Device);
-  Length = MAC_CoreFrameSend(&Device, Buffer);
-  MAC_CoreFrameReceived(&Coord, Buffer, Length);
-  Length = MAC_CoreFrameSend(&Coord, Buffer);
-  MAC_CoreFrameReceived(&Device, Buffer, Length);
 
-  MAC_FrameDecode(&F, Buffer, Length);
-  MAC_FrameCommandDecode(&F, &C);
+  MAC_CmdDataRequestSend(&Device);
+  MAC_CoreFrameSend(&Device, Buffer, &Length);
+  MAC_CoreFrameReceived(&Coord, Buffer, Length);
+
+  MAC_CoreFrameSend(&Coord, Buffer, &Length);
+  MAC_CoreFrameReceived(&Device, Buffer, Length);
 
   return 0;
 }
