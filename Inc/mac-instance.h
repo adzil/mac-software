@@ -118,6 +118,14 @@ force_inline void MAC_DebugFrame(MAC_Instance *H, MAC_Frame *F,
         case MAC_COMMAND_ID_DATA_REQUEST:
           printf("DataRequest");
           break;
+
+        case MAC_COMMAND_ID_DISCOVER_REQUEST:
+          printf("DiscoverRequest");
+          break;
+
+        case MAC_COMMAND_ID_DISCOVER_RESPONSE:
+          printf("DiscoverResponse S: %x X: %x", C.ShortAddress,
+                 C.ExtendedAddress);
       }
       break;
 

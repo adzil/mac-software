@@ -1,3 +1,7 @@
+#include <mac-instance.h>
+#include <mac-pib.h>
+#include <mac-memory.h>
+#include <mac-frame.h>
 #include "mac-core.h"
 
 void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
@@ -60,30 +64,48 @@ void MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data, size_t *Len) {
 }
 
 MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
+  MAC_FrameCommand C;
+
   // Check the destination addressing
   switch (F->FrameControl.DstAdrMode) {
     case MAC_ADRMODE_NOT_PRESENT:
-      // This only available as coordinator
-      if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR)
-        break;
+      if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
+        // Unstated destination address only available on coordinator
+        if (MAC_QueueAdrListFind(&H->Mem.Address, F->FrameControl.SrcAdrMode,
+                                 F->Address.Src))
+          // Check if the source already in the address list
+          break;
+      } else {
+        if (F->FrameControl.FrameType == MAC_FRAMETYPE_COMMAND) {
+          MAC_FrameCommandDecode(F, &C);
+          if (C.CommandId == MAC_COMMAND_ID_DISCOVER_RESPONSE)
+            break;
+        }
+      }
       return MAC_STATUS_INVALID_DESTINATION;
 
     case MAC_ADRMODE_SHORT:
-      // This is only available when the client is associated
       if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
-        if (H->Pib.ShortAdr != MAC_CONST_USE_EXTENDED_ADDRESS &&
-            H->Pib.ShortAdr != MAC_CONST_ADDRESS_UNKNOWN &&
+        // Coordinator side
+        if (F->Address.Dst.Short == MAC_CONST_BROADCAST_ADDRESS)
+          // Accept all broadcast address
+          break;
+        if (F->Address.Dst.Short != MAC_CONST_USE_EXTENDED_ADDRESS &&
             H->Pib.ShortAdr == F->Address.Dst.Short)
+          // Accept matched short address
           break;
       } else {
+        // Device side
         if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_SET &&
             H->Pib.ShortAdr == F->Address.Dst.Short)
+          // Accept when associated and matched short address
           break;
       }
       return MAC_STATUS_INVALID_DESTINATION;
 
     case MAC_ADRMODE_EXTENDED:
       if (F->Address.Dst.Extended == H->Config.ExtendedAddress)
+        // Allow all matched extended addresses
         break;
       return MAC_STATUS_INVALID_DESTINATION;
   }
@@ -93,6 +115,11 @@ MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
     // Check addressing on coordinator
     switch (F->FrameControl.SrcAdrMode) {
       case MAC_ADRMODE_NOT_PRESENT:
+        if (F->FrameControl.FrameType == MAC_FRAMETYPE_COMMAND) {
+          MAC_FrameCommandDecode(F, &C);
+          if (C.CommandId == MAC_COMMAND_ID_DISCOVER_REQUEST)
+            break;
+        }
         // This is unacceptable
         return MAC_STATUS_INVALID_SOURCE;
 
@@ -110,15 +137,18 @@ MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
     // Check addressing on device
     switch (F->FrameControl.SrcAdrMode) {
       case MAC_ADRMODE_NOT_PRESENT:
-        // Accept frame from coordinator
-        break;
+        if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_SET)
+          // Accept frame from coordinator
+          break;
 
       case MAC_ADRMODE_SHORT:
         // Only receive short address from coordinator, if associated
         if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_RESET)
           break;
         else
-          if (H->Pib.CoordShortAdr == F->Address.Src.Short)
+          if (H->Pib.CoordShortAdr != MAC_CONST_USE_EXTENDED_ADDRESS &&
+              H->Pib.CoordShortAdr != MAC_CONST_BROADCAST_ADDRESS &&
+              H->Pib.CoordShortAdr == F->Address.Src.Short)
             break;
         return MAC_STATUS_INVALID_SOURCE;
 

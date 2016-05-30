@@ -6,10 +6,10 @@ void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
   MAC_MemPoolInit(&H->Mem);
   MAC_MemQueueInit(&H->Mem);
   // Pib initialization
-  H->Pib.CoordShortAdr = MAC_CONST_ADDRESS_UNKNOWN;
+  H->Pib.CoordShortAdr = MAC_CONST_BROADCAST_ADDRESS;
   H->Pib.CoordExtendedAdr = 0;
   H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
-  H->Pib.ShortAdr = MAC_CONST_ADDRESS_UNKNOWN;
+  H->Pib.ShortAdr = MAC_CONST_USE_EXTENDED_ADDRESS;
   H->Pib.DSN = (uint8_t) rand();
   H->Pib.VpanCoordinator = VpanCoord;
   // Config initialization
@@ -37,7 +37,7 @@ void MAC_GenFrameSrcAdr(MAC_Instance *H, MAC_Frame *F) {
       // No source address for short destination addresses
       MAC_SetFrameNoSrcAdr(F);
     else if (H->Pib.ShortAdr != MAC_CONST_USE_EXTENDED_ADDRESS &&
-             H->Pib.ShortAdr != MAC_CONST_ADDRESS_UNKNOWN)
+             H->Pib.ShortAdr != MAC_CONST_BROADCAST_ADDRESS)
       // Use short address if already defined
       MAC_SetFrameShortSrcAdr(F, H->Pib.ShortAdr);
     else
@@ -46,7 +46,7 @@ void MAC_GenFrameSrcAdr(MAC_Instance *H, MAC_Frame *F) {
   } else {
     if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_SET &&
         H->Pib.ShortAdr != MAC_CONST_USE_EXTENDED_ADDRESS &&
-        H->Pib.ShortAdr != MAC_CONST_ADDRESS_UNKNOWN)
+        H->Pib.ShortAdr != MAC_CONST_BROADCAST_ADDRESS)
       // If associated and address assigned, use it
       MAC_SetFrameShortSrcAdr(F, H->Pib.ShortAdr);
     else

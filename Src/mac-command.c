@@ -1,3 +1,4 @@
+#include <mac-frame.h>
 #include "mac-command.h"
 
 void MAC_CmdSetFrameDstFromSrc(MAC_Frame *F, MAC_Frame *SF) {
@@ -5,12 +6,40 @@ void MAC_CmdSetFrameDstFromSrc(MAC_Frame *F, MAC_Frame *SF) {
   MAC_SetFrameDstAdr(F, SF->FrameControl.SrcAdrMode, SF->Address.Src);
 }
 
-void MAC_CmdSetFrameHeader(MAC_Instance *H, MAC_Frame *F) {
-  // Generate source addressing
-  MAC_GenFrameSrcAdr(H, F);
+void MAC_CmdSetFrameDstToCoord(MAC_Instance *H, MAC_Frame *F) {
+  if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_SET) {
+    MAC_SetFrameNoDstAdr(F);
+  } else {
+    if (H->Pib.CoordShortAdr != MAC_CONST_BROADCAST_ADDRESS &&
+        H->Pib.CoordShortAdr != MAC_CONST_USE_EXTENDED_ADDRESS)
+      MAC_SetFrameShortDstAdr(F, H->Pib.CoordShortAdr);
+    else
+      MAC_SetFrameExtendedDstAdr(F, H->Pib.CoordExtendedAdr);
+  }
+}
+
+void MAC_CmdSetFrameHeader(MAC_Instance *H, MAC_Frame *F, MAC_FrameCommand *C) {
   // Set frame controls
   MAC_GenFrameSequence(H, F);
-  MAC_SetFrameAckRequest(F);
+
+  if (C->CommandId == MAC_COMMAND_ID_DISCOVER_REQUEST) {
+    MAC_SetFrameNoSrcAdr(F);
+  } else {
+    // Generate source addressing
+    MAC_GenFrameSrcAdr(H, F);
+  }
+
+  switch (C->CommandId) {
+    case MAC_COMMAND_ID_DISCOVER_RESPONSE:
+    case MAC_COMMAND_ID_DISCOVER_REQUEST:
+      MAC_SetFrameNoAckRequest(F);
+      break;
+
+    default:
+      MAC_SetFrameAckRequest(F);
+      break;
+  }
+
   MAC_SetFrameNoPending(F);
   MAC_SetFrameType(F, MAC_FRAMETYPE_COMMAND);
 }
@@ -22,9 +51,9 @@ void MAC_CmdAssocResponseSend(MAC_Instance *H, MAC_Frame *SF,
 
   F = MAC_MemFrameAlloc(&H->Mem);
   if (!F) return;
-  MAC_CmdSetFrameDstFromSrc(F, SF);
-  MAC_CmdSetFrameHeader(H, F);
   MAC_SetFrameCmdAssocResponse(&C, ShortAdr, Status);
+  MAC_CmdSetFrameDstFromSrc(F, SF);
+  MAC_CmdSetFrameHeader(H, F, &C);
   MAC_FrameCommandEncode(F, &C);
 
   MAC_TransmitPutFrame(H, F);
@@ -36,9 +65,9 @@ void MAC_CmdAssocRequestSend(MAC_Instance *H) {
 
   F = MAC_MemFrameAlloc(&H->Mem);
   if (!F) return;
-  MAC_SetFrameNoDstAdr(F);
-  MAC_CmdSetFrameHeader(H, F);
   MAC_SetFrameCmdAssocRequest(&C);
+  MAC_CmdSetFrameDstToCoord(H, F);
+  MAC_CmdSetFrameHeader(H, F, &C);
   MAC_FrameCommandEncode(F, &C);
 
   MAC_TransmitPutFrame(H, F);
@@ -50,12 +79,44 @@ void MAC_CmdDataRequestSend(MAC_Instance *H) {
 
   F = MAC_MemFrameAlloc(&H->Mem);
   if (!F) return;
-  MAC_SetFrameNoDstAdr(F);
-  MAC_CmdSetFrameHeader(H, F);
   MAC_SetFrameCmdDataRequest(&C);
+  MAC_CmdSetFrameDstToCoord(H, F);
+  MAC_CmdSetFrameHeader(H, F, &C);
   MAC_FrameCommandEncode(F, &C);
 
   MAC_TransmitPutFrame(H, F);
+}
+
+void MAC_CmdDiscoverRequestSend(MAC_Instance *H) {
+  MAC_Frame *F;
+  MAC_FrameCommand C;
+
+  F = MAC_MemFrameAlloc(&H->Mem);
+  if (!F) return;
+  // Set to broadcast address
+  MAC_SetFrameCmdDiscoverRequest(&C);
+  MAC_SetFrameShortDstAdr(F, MAC_CONST_BROADCAST_ADDRESS);
+  MAC_CmdSetFrameHeader(H, F, &C);
+  MAC_FrameCommandEncode(F, &C);
+
+  MAC_TransmitPutFrame(H, F);
+}
+
+void MAC_CmdDiscoverResponseSend(MAC_Instance *H) {
+  MAC_Frame *F;
+  MAC_FrameCommand C;
+
+  F = MAC_MemFrameAlloc(&H->Mem);
+  if (!F) return;
+  // Set to broadcast address
+  MAC_SetFrameCmdDiscoverResponse(&C, H->Pib.ShortAdr,
+                                  H->Config.ExtendedAddress);
+  MAC_SetFrameNoDstAdr(F);
+  MAC_CmdSetFrameHeader(H, F, &C);
+  MAC_FrameCommandEncode(F, &C);
+
+  // Immediate send frame
+  MAC_TransmitSendFrame(H, F);
 }
 
 void MAC_CmdAssocRequestHandler(MAC_Instance *H, MAC_Frame *F) {
@@ -73,14 +134,14 @@ void MAC_CmdAssocRequestHandler(MAC_Instance *H, MAC_Frame *F) {
       Adr.Short = (uint16_t) rand(); // TODO: Change to uC specific random
       A = MAC_QueueAdrListFind(&H->Mem.Address, MAC_ADRMODE_SHORT, Adr);
     } while (A || Adr.Short == MAC_CONST_USE_EXTENDED_ADDRESS ||
-             Adr.Short == MAC_CONST_ADDRESS_UNKNOWN ||
+             Adr.Short == MAC_CONST_BROADCAST_ADDRESS ||
              Adr.Short == H->Pib.ShortAdr);
   }
 
   A = MAC_MemAdrListAlloc(&H->Mem);
   if (!A) {
     MAC_CmdAssocResponseSend(H, F, MAC_ASSOCSTATUS_FAILED,
-                              MAC_CONST_ADDRESS_UNKNOWN);
+                              MAC_CONST_BROADCAST_ADDRESS);
   } else {
 
     A->ExtendedAdr = F->Address.Src.Extended;
@@ -115,6 +176,19 @@ void MAC_CmdDataRequestHandler(MAC_Instance *H, MAC_Frame *F) {
   MAC_TransmitLookupFrame(H, F->FrameControl.SrcAdrMode, F->Address.Src);
 }
 
+void MAC_CmdDiscoverRequestHandler(MAC_Instance *H) {
+  MAC_CmdDiscoverResponseSend(H);
+}
+
+void MAC_CmdDiscoverResponseHandler(MAC_Instance *H, MAC_FrameCommand *C) {
+  // Only set new coordinator address when not associated
+  if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_RESET) {
+    H->Pib.CoordShortAdr = C->ShortAddress;
+    H->Pib.CoordExtendedAdr = C->ExtendedAddress;
+    MAC_CmdAssocRequestSend(H);
+  }
+}
+
 MAC_Status MAC_CmdFrameHandler(MAC_Instance *H, MAC_Frame *F) {
   MAC_FrameCommand C;
 
@@ -144,6 +218,19 @@ MAC_Status MAC_CmdFrameHandler(MAC_Instance *H, MAC_Frame *F) {
         return MAC_STATUS_INVALID_COMMAND;
       MAC_CmdDataRequestHandler(H, F);
       break;
+
+    case MAC_COMMAND_ID_DISCOVER_REQUEST:
+      // Only coord should response to discover request
+      if (H->Pib.VpanCoordinator != MAC_PIB_VPAN_COORDINATOR)
+        return MAC_STATUS_INVALID_COMMAND;
+      MAC_CmdDiscoverRequestHandler(H);
+      break;
+
+    case MAC_COMMAND_ID_DISCOVER_RESPONSE:
+      // Only device should act on discover response
+      if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR)
+        return MAC_STATUS_INVALID_COMMAND;
+      MAC_CmdDiscoverResponseHandler(H, &C);
 
     default:
       return MAC_STATUS_INVALID_COMMAND;

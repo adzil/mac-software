@@ -53,7 +53,9 @@ typedef enum {
 typedef enum {
   MAC_COMMAND_ID_ASSOC_REQUEST = 0,
   MAC_COMMAND_ID_ASSOC_RESPONSE = 1,
-  MAC_COMMAND_ID_DATA_REQUEST = 4
+  MAC_COMMAND_ID_DATA_REQUEST = 4,
+  MAC_COMMAND_ID_DISCOVER_REQUEST = 10,
+  MAC_COMMAND_ID_DISCOVER_RESPONSE = 11
 } MAC_FrameCommandId;
 
 typedef enum {
@@ -76,6 +78,7 @@ typedef struct {
 typedef struct {
   MAC_FrameCommandId CommandId;
   MAC_FrameAssocStatus AssocStatus;
+  uint32_t ExtendedAddress;
   uint16_t ShortAddress;
 } MAC_FrameCommand;
 
@@ -220,6 +223,18 @@ force_inline void MAC_SetFrameCmdAssocResponse(MAC_FrameCommand *C,
 
 force_inline void MAC_SetFrameCmdDataRequest(MAC_FrameCommand *C) {
   C->CommandId = MAC_COMMAND_ID_DATA_REQUEST;
+}
+
+force_inline void MAC_SetFrameCmdDiscoverRequest(MAC_FrameCommand *C) {
+  C->CommandId = MAC_COMMAND_ID_DISCOVER_REQUEST;
+}
+
+force_inline void MAC_SetFrameCmdDiscoverResponse(MAC_FrameCommand *C,
+                                                  uint16_t ShortAddress,
+                                                  uint32_t ExtendedAddress) {
+  C->CommandId = MAC_COMMAND_ID_DISCOVER_RESPONSE;
+  C->ShortAddress = ShortAddress;
+  C->ExtendedAddress = ExtendedAddress;
 }
 
 #endif // __MAC_FRAME_H__

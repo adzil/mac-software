@@ -13,8 +13,28 @@ int main(void) {
   MAC_Init(&Device[1], 0x3, MAC_PIB_VPAN_DEVICE);
   MAC_Init(&Device[2], 0x4, MAC_PIB_VPAN_DEVICE);
 
-  Coord.Pib.ShortAdr = 0x3af1;
+  Coord.Pib.ShortAdr = 0xb782;
 
+  for (i = 0; i < 3; i++) {
+    // Discover request
+    MAC_CmdDiscoverRequestSend(&Device[i]);
+    MAC_CoreFrameSend(&Device[i], Buffer, &Length);
+    MAC_CoreFrameReceived(&Coord, Buffer, Length);
+    // Discover req reply
+    MAC_CoreFrameSend(&Coord, Buffer, &Length);
+    MAC_CoreFrameReceived(&Device[i], Buffer, Length);
+    // Assoc Request send
+    MAC_CoreFrameSend(&Device[i], Buffer, &Length);
+    MAC_CoreFrameReceived(&Coord, Buffer, Length);
+    // Data request send
+    MAC_CmdDataRequestSend(&Device[i]);
+    MAC_CoreFrameSend(&Device[i], Buffer, &Length);
+    MAC_CoreFrameReceived(&Coord, Buffer, Length);
+    // Get data reply
+    MAC_CoreFrameSend(&Coord, Buffer, &Length);
+    MAC_CoreFrameReceived(&Device[i], Buffer, Length);
+  }
+/*
   printf("- Association Request Test\n");
 
   for (i = 0; i < 3; i++) {
@@ -110,7 +130,7 @@ int main(void) {
   for (i = 2; i >= 0; i--) {
     // Reset association status
     Device[i].Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
-    Device[i].Pib.ShortAdr = MAC_CONST_ADDRESS_UNKNOWN;
+    Device[i].Pib.ShortAdr = MAC_CONST_BROADCAST_ADDRESS;
     // Restart association
     MAC_CmdAssocRequestSend(&Device[i]);
     MAC_CoreFrameSend(&Device[i], Buffer, &Length);
@@ -129,6 +149,6 @@ int main(void) {
     MAC_CoreFrameReceived(&Device[1], Buffer, Length);
     MAC_CoreFrameReceived(&Device[2], Buffer, Length);
   }
-
+*/
   return 0;
 }

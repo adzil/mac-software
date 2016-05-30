@@ -12,7 +12,7 @@
 #define MAC_CONFIG_MAX_FRAME_BUFFER (4 + MAC_CONFIG_MAX_PAYLOAD_LENGTH)
 
 #define MAC_CONST_USE_EXTENDED_ADDRESS 0xfffe
-#define MAC_CONST_ADDRESS_UNKNOWN 0xffff
+#define MAC_CONST_BROADCAST_ADDRESS 0xffff
 
 typedef struct {
   uint32_t ExtendedAddress;

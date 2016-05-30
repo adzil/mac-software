@@ -1,3 +1,4 @@
+#include <mac-frame.h>
 #include "mac-frame.h"
 
 /* Encode the structured frame into data stream */
@@ -112,11 +113,23 @@ void MAC_FrameCommandEncode(MAC_Frame *F, MAC_FrameCommand *C) {
   MAC_WriteByte(Data, &C->CommandId);
   F->Payload.Length = 1;
   // Check for command ID
-  if (C->CommandId == MAC_COMMAND_ID_ASSOC_RESPONSE) {
-    MAC_WriteWord(Data, &C->ShortAddress);
-    MAC_WriteByte(Data, &C->AssocStatus);
-    F->Payload.Length = 4;
+  switch (C->CommandId) {
+    case MAC_COMMAND_ID_ASSOC_RESPONSE:
+      MAC_WriteWord(Data, &C->ShortAddress);
+      MAC_WriteByte(Data, &C->AssocStatus);
+      break;
+
+    case MAC_COMMAND_ID_DISCOVER_RESPONSE:
+      MAC_WriteWord(Data, &C->ShortAddress);
+      MAC_WriteDword(Data, &C->ExtendedAddress);
+      break;
+
+    default:
+      break;
   }
+
+  // Calculate payload length
+  F->Payload.Length = Data - F->Payload.Data;
 }
 
 void MAC_FrameCommandDecode(MAC_Frame *F, MAC_FrameCommand *C) {
@@ -131,8 +144,18 @@ void MAC_FrameCommandDecode(MAC_Frame *F, MAC_FrameCommand *C) {
   // Get the command ID
   MAC_ReadByte(&C->CommandId, Data);
   // Check for command ID
-  if (C->CommandId == MAC_COMMAND_ID_ASSOC_RESPONSE) {
-    MAC_ReadWord(&C->ShortAddress, Data);
-    MAC_ReadByte(&C->AssocStatus, Data);
+  switch (C->CommandId) {
+    case MAC_COMMAND_ID_ASSOC_RESPONSE:
+      MAC_ReadWord(&C->ShortAddress, Data);
+      MAC_ReadByte(&C->AssocStatus, Data);
+      break;
+
+    case MAC_COMMAND_ID_DISCOVER_RESPONSE:
+      MAC_ReadWord(&C->ShortAddress, Data);
+      MAC_ReadDword(&C->ExtendedAddress, Data);
+      break;
+
+    default:
+      break;
   }
 }
