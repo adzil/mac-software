@@ -1,48 +1,50 @@
 #include "mac-core.h"
 
+void Broadcaster(MAC_Instance *H, int SendId, int Count) {
+  uint8_t Buffer[MAC_CONFIG_MAX_FRAME_BUFFER];
+  size_t Length;
+  int i;
+
+  MAC_CoreFrameSend(&H[SendId], Buffer, &Length);
+
+  for (i = 0; i < Count; i++) {
+    // Skip receiving on same instance
+    if (i == SendId) continue;
+    MAC_CoreFrameReceived(&H[i], Buffer, Length);
+  }
+}
+
 int main(void) {
-  MAC_Instance Coord;
-  MAC_Instance Device[3];
+  MAC_Instance Device[5];
   uint8_t Buffer[128];
   size_t Length;
-  MAC_Frame *F;
-  int i = 0;
 
-  MAC_Init(&Coord, 0x1, MAC_PIB_VPAN_COORDINATOR);
-  MAC_Init(&Device[0], 0x2, MAC_PIB_VPAN_DEVICE);
-  MAC_Init(&Device[1], 0x3, MAC_PIB_VPAN_DEVICE);
-  MAC_Init(&Device[2], 0x4, MAC_PIB_VPAN_DEVICE);
+  MAC_Init(&Device[0], 0x1, MAC_PIB_VPAN_COORDINATOR);
+  MAC_Init(&Device[1], 0x2, MAC_PIB_VPAN_DEVICE);
+  MAC_Init(&Device[2], 0x3, MAC_PIB_VPAN_DEVICE);
+  MAC_Init(&Device[3], 0x4, MAC_PIB_VPAN_DEVICE);
+  MAC_Init(&Device[4], 0x5, MAC_PIB_VPAN_DEVICE);
 
-  Coord.Pib.ShortAdr = 0xb782;
+  Device[0].Pib.ShortAdr = 0x1a1b;
 
-  //for (i = 0; i < 3; i++) {
-    // Discover request
-    MAC_CmdDiscoverRequestSend(&Device[i]);
-    MAC_CoreFrameSend(&Device[i], Buffer, &Length);
-    MAC_CoreFrameReceived(&Coord, Buffer, Length);
-    // Discover req reply
-    MAC_CoreFrameSend(&Coord, Buffer, &Length);
-    MAC_CoreFrameReceived(&Device[i], Buffer, Length);
-    // Assoc Request send
-    MAC_CoreFrameSend(&Device[i], Buffer, &Length);
-    MAC_CoreFrameReceived(&Coord, Buffer, Length);
-    // Assoc req ack
-    MAC_CoreFrameSend(&Coord, Buffer, &Length);
-    MAC_CoreFrameReceived(&Device[i], Buffer, Length);
-    // Data request send
-    MAC_CmdDataRequestSend(&Device[i]);
-    MAC_CoreFrameSend(&Device[i], Buffer, &Length);
-    MAC_CoreFrameReceived(&Coord, Buffer, Length);
-    // Data req ack
-    MAC_CoreFrameSend(&Coord, Buffer, &Length);
-    MAC_CoreFrameReceived(&Device[i], Buffer, Length);
-    // Get data reply
-    MAC_CoreFrameSend(&Coord, Buffer, &Length);
-    MAC_CoreFrameReceived(&Device[i], Buffer, Length);
-    // Data reply ack
-    MAC_CoreFrameSend(&Device[i], Buffer, &Length);
-    MAC_CoreFrameReceived(&Coord, Buffer, Length);
-  //}
+  // Send discover request
+  MAC_CmdDiscoverRequestSend(&Device[1]);
+  Broadcaster(Device, 1, 5);
+  // Retrieve discover response
+  Broadcaster(Device, 0, 5);
+  // Association request
+  Broadcaster(Device, 1, 5);
+  // Get acknowledgement frame
+  Broadcaster(Device, 0, 5);
+  // Get data from coord
+  MAC_CmdDataRequestSend(&Device[1]);
+  Broadcaster(Device, 1, 5);
+  // Get ack & data
+  Broadcaster(Device, 0, 5);
+  Broadcaster(Device, 0, 5);
+  Broadcaster(Device, 0, 5);
+  Broadcaster(Device, 0, 5);
+
 /*
   printf("- Association Request Test\n");
 

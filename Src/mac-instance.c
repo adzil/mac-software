@@ -1,3 +1,4 @@
+#include <mac-instance.h>
 #include "mac-instance.h"
 
 void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
@@ -17,6 +18,7 @@ void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
   // Transmission initialization
   H->Tx.Length = 0;
   H->Tx.Retries = 0;
+  H->Tx.F = NULL;
 }
 
 void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F) {

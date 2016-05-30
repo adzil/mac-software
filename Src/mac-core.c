@@ -1,5 +1,3 @@
-#include <mac-instance.h>
-#include <mac-frame.h>
 #include "mac-core.h"
 
 void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
@@ -17,9 +15,6 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
     MAC_MemFrameFree(&H->Mem, F);
     return;
   }
-
-  // Check for Back-Ack
-  MAC_CoreFrameBackAck(H, F);
 
   // Check frame addressing
   if (MAC_CoreCheckAddressing(H, F) != MAC_STATUS_OK) {
@@ -39,6 +34,11 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
       MAC_CmdFrameHandler(H, F);
       break;
 
+    case MAC_FRAMETYPE_ACK:
+      // Check for Back-Ack
+      MAC_CoreFrameBackAck(H, F);
+      break;
+
     default:
       break;
   }
@@ -51,7 +51,6 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
 }
 
 void MAC_CoreFrameBackAck(MAC_Instance *H, MAC_Frame *F) {
-  if (F->FrameControl.FrameType != MAC_FRAMETYPE_ACK) return;
   if (!H->Tx.F) return;
 
   if (H->Tx.F->Sequence == F->Sequence) {
@@ -82,13 +81,23 @@ void MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data, size_t *Len) {
     MAC_DebugFrame(H, H->Tx.F, MAC_DEBUG_SND);
 #endif
 
-  if (!H->Tx.Retries)
+  if (!H->Tx.Retries) {
     // Clean up frame
     MAC_MemFrameFree(&H->Mem, H->Tx.F);
+    H->Tx.F = NULL;
+  }
 }
 
 MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
   MAC_FrameCommand C;
+
+  // Ack frame only
+  if (F->FrameControl.FrameType == MAC_FRAMETYPE_ACK) {
+    if (H->Tx.F)
+      if (H->Tx.F->Sequence == F->Sequence)
+        return MAC_STATUS_OK;
+    return MAC_STATUS_INVALID_DESTINATION;
+  }
 
   // Check the destination addressing
   switch (F->FrameControl.DstAdrMode) {
@@ -99,18 +108,12 @@ MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
                                  F->Address.Src))
           // Check if the source already in the address list
           break;
-        // Ack frame can pass trough
-        if (F->FrameControl.FrameType == MAC_FRAMETYPE_ACK)
-          break;
       } else {
         if (F->FrameControl.FrameType == MAC_FRAMETYPE_COMMAND) {
           MAC_FrameCommandDecode(F, &C);
           if (C.CommandId == MAC_COMMAND_ID_DISCOVER_RESPONSE)
             break;
         }
-        // Ack frame can pass trough
-        if (F->FrameControl.FrameType == MAC_FRAMETYPE_ACK)
-          break;
       }
       return MAC_STATUS_INVALID_DESTINATION;
 
@@ -150,8 +153,6 @@ MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
           if (C.CommandId == MAC_COMMAND_ID_DISCOVER_REQUEST)
             break;
         }
-        if (F->FrameControl.FrameType == MAC_FRAMETYPE_ACK)
-          break;
         // This is unacceptable
         return MAC_STATUS_INVALID_SOURCE;
 
@@ -171,8 +172,6 @@ MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
       case MAC_ADRMODE_NOT_PRESENT:
         if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_SET)
           // Accept frame from coordinator
-          break;
-        if (F->FrameControl.FrameType == MAC_FRAMETYPE_ACK)
           break;
         return MAC_STATUS_INVALID_SOURCE;
 
