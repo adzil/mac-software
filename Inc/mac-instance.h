@@ -10,10 +10,18 @@
 #include "mac-queue.h"
 #include "mac-pib.h"
 
+// Transmission unit structure
+typedef struct {
+  MAC_Frame *F;
+  uint16_t Length;
+  uint16_t Retries;
+} MAC_Transmission;
+
 // MAC Handle for single MAC instance
 typedef struct {
   MAC_Pib Pib;
   MAC_Config Config;
+  MAC_Transmission Tx;
   // The memory part should be on the bottom
   MAC_Mem Mem;
 } MAC_Instance;
@@ -86,6 +94,17 @@ force_inline void MAC_DebugFrame(MAC_Instance *H, MAC_Frame *F,
       break;
   }
 
+  printf(" ACK: ");
+  switch (F->FrameControl.AckRequest) {
+    case MAC_ACKREQUEST_RESET:
+      printf("No");
+      break;
+
+    case MAC_ACKREQUEST_SET:
+      printf("Yes");
+      break;
+  }
+
   printf(" SEQN: %d TYPE: ", F->Sequence);
   switch(F->FrameControl.FrameType) {
     case MAC_FRAMETYPE_DATA:
@@ -141,6 +160,7 @@ force_inline void MAC_DebugFrame(MAC_Instance *H, MAC_Frame *F,
 void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
               MAC_PibVpanCoordinator VpanCoord);
 void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F);
+void MAC_GenFrameAck(MAC_Instance *H, MAC_Frame *SF);
 void MAC_GenFrameSrcAdr(MAC_Instance *H, MAC_Frame *F);
 
 force_inline void MAC_TransmitSendFrame(MAC_Instance *H, MAC_Frame *F) {

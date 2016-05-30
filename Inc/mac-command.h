@@ -19,5 +19,4 @@ void MAC_CmdDiscoverRequestHandler(MAC_Instance *H);
 void MAC_CmdDiscoverResponseHandler(MAC_Instance *H, MAC_FrameCommand *C);
 MAC_Status MAC_CmdFrameHandler(MAC_Instance *H, MAC_Frame *F);
 
-
 #endif // __MAC_COMMAND_H__
