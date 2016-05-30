@@ -33,6 +33,7 @@ int main(void) {
   // Retrieve discover response
   Broadcaster(Device, 0, 5);
   // Association request
+  MAC_CmdAssocRequestSend(&Device[1]);
   Broadcaster(Device, 1, 5);
   // Get acknowledgement frame
   Broadcaster(Device, 0, 5);
@@ -42,6 +43,7 @@ int main(void) {
   // Get ack & data
   Broadcaster(Device, 0, 5);
   Broadcaster(Device, 0, 5);
+  Broadcaster(Device, 1, 5);
   Broadcaster(Device, 0, 5);
   Broadcaster(Device, 0, 5);
 

@@ -185,7 +185,6 @@ void MAC_CmdDiscoverResponseHandler(MAC_Instance *H, MAC_FrameCommand *C) {
   if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_RESET) {
     H->Pib.CoordShortAdr = C->ShortAddress;
     H->Pib.CoordExtendedAdr = C->ExtendedAddress;
-    MAC_CmdAssocRequestSend(H);
   }
 }
 
