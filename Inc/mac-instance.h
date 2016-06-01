@@ -26,7 +26,7 @@ typedef struct {
   MAC_Mem Mem;
 } MAC_Instance;
 
-#define MAC_DEBUG
+//#define MAC_DEBUG
 
 #ifdef MAC_DEBUG
 typedef enum {
