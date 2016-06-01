@@ -1,4 +1,3 @@
-#include <mac-frame.h>
 #include "mac-command.h"
 
 void MAC_CmdSetFrameDstFromSrc(MAC_Frame *F, MAC_Frame *SF) {
@@ -131,7 +130,7 @@ void MAC_CmdAssocRequestHandler(MAC_Instance *H, MAC_Frame *F) {
   } else {
     do {
       // Keep generating short address if exists on the list
-      Adr.Short = (uint16_t) rand(); // TODO: Change to uC specific random
+      Adr.Short = (RND_Get() << 8) | RND_Get(); // TODO: Change to uC specific random
       A = MAC_QueueAdrListFind(&H->Mem.Address, MAC_ADRMODE_SHORT, Adr);
     } while (A || Adr.Short == MAC_CONST_USE_EXTENDED_ADDRESS ||
              Adr.Short == MAC_CONST_BROADCAST_ADDRESS ||

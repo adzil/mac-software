@@ -2,7 +2,7 @@
 #define __MAC_COMMAND_H__
 
 #include <inttypes.h>
-#include <stdlib.h>
+#include "random.h"
 #include "mac-instance.h"
 
 void MAC_CmdSetFrameDstFromSrc(MAC_Frame *F, MAC_Frame *SF);

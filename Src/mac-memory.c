@@ -8,7 +8,7 @@ void MAC_MemInit(MAC_MemHandle *H, void *I, size_t Size, int Length) {
   while (Length -- > 0) {
     *((void **) I) = H->Free;
     H->Free = I;
-    I += Size;
+    I = (uint8_t *) I + Size;
   }
 }
 
@@ -25,12 +25,12 @@ void *MAC_MemAlloc(MAC_MemHandle *H) {
   *((void **) I) = H;
   LOCK_End(&H->Lock);
 
-  return I + sizeof(void *);
+  return (uint8_t *) I + sizeof(void *);
 }
 
 void MAC_MemFree(MAC_MemHandle *H, void *I) {
   // Check memory belonging
-  I -= sizeof(void *);
+  I = (uint8_t *) I - sizeof(void *);
   if (*((void **) I) != H) return;
 
   // Start lock mechanism

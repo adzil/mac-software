@@ -7,6 +7,7 @@
 #include "mac-config.h"
 #include "mac-common.h"
 #include "crc16.h"
+#include "stm32f4xx.h"
 
 /* Shorthand for frame copy */
 #define MAC_ReadByte(Dst, Src) do { \

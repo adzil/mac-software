@@ -1,4 +1,3 @@
-#include <mac-instance.h>
 #include "mac-instance.h"
 
 void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
@@ -11,7 +10,7 @@ void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
   H->Pib.CoordExtendedAdr = 0;
   H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
   H->Pib.ShortAdr = MAC_CONST_USE_EXTENDED_ADDRESS;
-  H->Pib.DSN = (uint8_t) rand();
+  H->Pib.DSN = (uint8_t) RND_Get();
   H->Pib.VpanCoordinator = VpanCoord;
   // Config initialization
   H->Config.ExtendedAddress = ExtendedAdr;

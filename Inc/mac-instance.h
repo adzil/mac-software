@@ -1,7 +1,7 @@
 #ifndef __MAC_HANDLE_H__
 #define __MAC_HANDLE_H__
 
-#include <stdlib.h>
+#include "random.h"
 /* Include all mac sub-functions */
 #include "mac-common.h"
 #include "mac-config.h"
