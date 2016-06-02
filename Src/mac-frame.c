@@ -6,6 +6,9 @@ MAC_Status MAC_FrameEncode(MAC_Frame *F, uint8_t *Data, size_t *Len) {
   uint8_t *DataPtr;
   uint16_t Checksum;
 
+  // Check for data availability
+  if (!F) return MAC_STATUS_INVALID_PARAM;
+
   // Check for data length
   if (F->Payload.Length > MAC_CONFIG_MAX_PAYLOAD_LENGTH)
     return MAC_STATUS_INVALID_LENGTH;

@@ -1,3 +1,6 @@
+#include <mac-instance.h>
+#include <mac-frame.h>
+#include <mac-pib.h>
 #include "mac-core.h"
 
 void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
@@ -51,21 +54,32 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
 }
 
 void MAC_CoreFrameBackAck(MAC_Instance *H, MAC_Frame *F) {
+  LOCK_Start(&H->Tx.Lock);
+
   if (!H->Tx.F) return;
 
   if (H->Tx.F->Sequence == F->Sequence) {
     MAC_MemFrameFree(&H->Mem, H->Tx.F);
     H->Tx.F = NULL;
     H->Tx.Retries = 0;
+    H->Tx.FailedAck = 0;
   }
+
+  LOCK_End(&H->Tx.Lock);
 }
 
-void MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data, size_t *Len) {
+MAC_Status MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data, size_t *Len) {
   *Len = 0;
+  MAC_Status Ret = MAC_STATUS_OK;
+
+  LOCK_Start(&H->Tx.Lock);
 
   if (!H->Tx.Retries) {
     H->Tx.F = MAC_TransmitGetFrame(H);
-    if (!H->Tx.F) return;
+    if (!H->Tx.F) {
+      LOCK_End(&H->Tx.Lock);
+      return MAC_STATUS_NO_DATA;
+    }
     if (H->Tx.F->FrameControl.AckRequest == MAC_ACKREQUEST_SET)
       H->Tx.Retries = MAC_CONFIG_MAX_RETRIES;
     else
@@ -76,16 +90,27 @@ void MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data, size_t *Len) {
   H->Tx.Retries--;
   // Copy frame to data buffer
   MAC_FrameEncode(H->Tx.F, Data, Len);
+  if (H->Tx.F->FrameControl.FrameType == MAC_FRAMETYPE_ACK)
+    Ret = MAC_STATUS_NO_DELAY;
 
 #ifdef MAC_DEBUG
     MAC_DebugFrame(H, H->Tx.F, MAC_DEBUG_SND);
 #endif
 
   if (!H->Tx.Retries) {
+    if (H->Tx.F->FrameControl.AckRequest == MAC_ACKREQUEST_SET)
+      if (++H->Tx.FailedAck >= MAC_CONFIG_MAX_ACK_ERROR){
+        H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
+        H->Tx.FailedAck = 0;
+      }
     // Clean up frame
     MAC_MemFrameFree(&H->Mem, H->Tx.F);
     H->Tx.F = NULL;
   }
+
+  LOCK_End(&H->Tx.Lock);
+
+  return Ret;
 }
 
 MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {

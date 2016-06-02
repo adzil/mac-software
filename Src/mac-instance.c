@@ -1,4 +1,7 @@
+#include <mac-instance.h>
 #include "mac-instance.h"
+
+char MAC_TermBuf[256];
 
 void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
               MAC_PibVpanCoordinator VpanCoord) {
@@ -18,6 +21,8 @@ void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
   H->Tx.Length = 0;
   H->Tx.Retries = 0;
   H->Tx.F = NULL;
+  H->Tx.FailedAck = 0;
+  LOCK_End(&H->Tx.Lock);
 }
 
 void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F) {

@@ -10,11 +10,17 @@
 #include "mac-queue.h"
 #include "mac-pib.h"
 
+#include "usart.h"
+
+extern char MAC_TermBuf[256];
+
 // Transmission unit structure
 typedef struct {
   MAC_Frame *F;
   uint16_t Length;
   uint16_t Retries;
+  uint16_t FailedAck;
+  LOCK_Handle Lock;
 } MAC_Transmission;
 
 // MAC Handle for single MAC instance
@@ -26,7 +32,7 @@ typedef struct {
   MAC_Mem Mem;
 } MAC_Instance;
 
-//#define MAC_DEBUG
+#define MAC_DEBUG
 
 #ifdef MAC_DEBUG
 typedef enum {
@@ -36,9 +42,8 @@ typedef enum {
   MAC_DEBUG_RDY
 } MAC_DebugDir;
 
-#include <stdio.h>
-force_inline void MAC_DebugStamp(MAC_Instance *H) {
-  printf("(%x/%x) ", H->Config.ExtendedAddress, H->Pib.ShortAdr);
+force_inline void Log(const char *Msg) {
+  HAL_UART_Transmit(&huart2, (uint8_t *)Msg, strlen(Msg), 0xff);
 }
 
 force_inline void MAC_DebugFrame(MAC_Instance *H, MAC_Frame *F,
@@ -46,114 +51,124 @@ force_inline void MAC_DebugFrame(MAC_Instance *H, MAC_Frame *F,
   MAC_FrameCommand C;
   int i;
 
-  MAC_DebugStamp(H);
-  printf("FRAME ");
+  Log("FRAME ");
   switch (Dir) {
     case MAC_DEBUG_RCV:
-      printf("RCV");
+      Log("RCV");
       break;
 
     case MAC_DEBUG_SND:
-      printf("SND");
+      Log("SND");
       break;
 
     case MAC_DEBUG_QUE:
-      printf("QUE");
+      Log("QUE");
       break;
 
     case MAC_DEBUG_RDY:
-      printf("RDY");
+      Log("RDY");
       break;
   }
-  printf(" - ADDRESS: ");
+  Log(" - ADDRESS: ");
   switch (F->FrameControl.SrcAdrMode) {
     case MAC_ADRMODE_NOT_PRESENT:
-      printf("[NA]");
+      Log("[NA]");
       break;
 
     case MAC_ADRMODE_SHORT:
-      printf("[S:%x]", F->Address.Src.Short);
+      sprintf(MAC_TermBuf, "[S:%x]", F->Address.Src.Short);
+      Log(MAC_TermBuf);
       break;
 
     case MAC_ADRMODE_EXTENDED:
-      printf("[X:%x]", F->Address.Src.Extended);
+      sprintf(MAC_TermBuf, "[X:%x]", F->Address.Src.Extended);
+      Log(MAC_TermBuf);
       break;
   }
-  printf("-->");
+  Log("-->");
   switch (F->FrameControl.DstAdrMode) {
     case MAC_ADRMODE_NOT_PRESENT:
-      printf("[NA]");
+      Log("[NA]");
       break;
 
     case MAC_ADRMODE_SHORT:
-      printf("[S:%x]", F->Address.Dst.Short);
+      sprintf(MAC_TermBuf, "[S:%x]", F->Address.Dst.Short);
+      Log(MAC_TermBuf);
       break;
 
     case MAC_ADRMODE_EXTENDED:
-      printf("[X:%x]", F->Address.Dst.Extended);
+      sprintf(MAC_TermBuf, "[X:%x]", F->Address.Dst.Extended);
+      Log(MAC_TermBuf);
       break;
   }
 
-  printf(" ACK: ");
+  Log(" ACK: ");
   switch (F->FrameControl.AckRequest) {
     case MAC_ACKREQUEST_RESET:
-      printf("No");
+      Log("No");
       break;
 
     case MAC_ACKREQUEST_SET:
-      printf("Yes");
+      Log("Yes");
       break;
   }
 
-  printf(" SEQN: %d TYPE: ", F->Sequence);
+  sprintf(MAC_TermBuf, " SEQN: %d TYPE: ", F->Sequence);
+  Log(MAC_TermBuf);
+
   switch(F->FrameControl.FrameType) {
     case MAC_FRAMETYPE_DATA:
-      printf("Data PAYLOAD: ");
-      for (i = 0; i < F->Payload.Length; i++)
-        printf("%2x ", F->Payload.Data[i]);
+      Log("Data PAYLOAD: ");
+      for (i = 0; i < F->Payload.Length; i++) {
+        sprintf(MAC_TermBuf, "%2x ", F->Payload.Data[i]);
+        Log(MAC_TermBuf);
+      }
       break;
 
     case MAC_FRAMETYPE_COMMAND:
-      printf("Command PAYLOAD: ");
+      Log("Command PAYLOAD: ");
       MAC_FrameCommandDecode(F, &C);
       switch (C.CommandId) {
         case MAC_COMMAND_ID_ASSOC_REQUEST:
-          printf("AssocRequest");
+          Log("AssocRequest");
           break;
 
         case MAC_COMMAND_ID_ASSOC_RESPONSE:
-          printf("AssocResponse MSG: ");
+          Log("AssocResponse MSG: ");
           switch (C.AssocStatus) {
             case MAC_ASSOCSTATUS_SUCCESS:
-              printf("SUCCESS, SHORT ADR: %x", C.ShortAddress);
+              sprintf(MAC_TermBuf, "SUCCESS, SHORT ADR: %x", C.ShortAddress);
+              Log(MAC_TermBuf);
               break;
 
             case MAC_ASSOCSTATUS_FAILED:
-              printf("FAILED");
+              Log("FAILED");
               break;
           }
           break;
 
         case MAC_COMMAND_ID_DATA_REQUEST:
-          printf("DataRequest");
+          Log("DataRequest");
           break;
 
         case MAC_COMMAND_ID_DISCOVER_REQUEST:
-          printf("DiscoverRequest");
+          Log("DiscoverRequest");
           break;
 
         case MAC_COMMAND_ID_DISCOVER_RESPONSE:
-          printf("DiscoverResponse S: %x X: %x", C.ShortAddress,
-                 C.ExtendedAddress);
+          sprintf(MAC_TermBuf, "DiscoverResponse S: %x X: %x", C.ShortAddress,
+                  C.ExtendedAddress);
+          Log(MAC_TermBuf);
+
       }
       break;
 
     case MAC_FRAMETYPE_ACK:
-      printf("Ack");
+      Log("Ack");
       break;
   }
 
-  printf("\n");
+  Log("\r\n");
 }
 #endif
 
