@@ -56,11 +56,12 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
 void MAC_CoreFrameBackAck(MAC_Instance *H, MAC_Frame *F) {
   LOCK_Start(&H->Tx.Lock);
 
-  if (!H->Tx.F) return;
+  if (H->Tx.Retries == 0) {
+    LOCK_End(&H->Tx.Lock);
+    return;
+  }
 
-  if (H->Tx.F->Sequence == F->Sequence) {
-    MAC_MemFrameFree(&H->Mem, H->Tx.F);
-    H->Tx.F = NULL;
+  if (H->Tx.Sequence == F->Sequence) {
     H->Tx.Retries = 0;
     H->Tx.FailedAck = 0;
   }
@@ -68,45 +69,48 @@ void MAC_CoreFrameBackAck(MAC_Instance *H, MAC_Frame *F) {
   LOCK_End(&H->Tx.Lock);
 }
 
-MAC_Status MAC_CoreFrameSend(MAC_Instance *H, uint8_t *Data, size_t *Len) {
-  *Len = 0;
+MAC_Status MAC_CoreFrameSend(MAC_Instance *H, uint8_t **Data, size_t *Len) {
+  MAC_Frame *F;
   MAC_Status Ret = MAC_STATUS_OK;
 
   LOCK_Start(&H->Tx.Lock);
 
-  if (!H->Tx.Retries) {
-    H->Tx.F = MAC_TransmitGetFrame(H);
-    if (!H->Tx.F) {
+  if (H->Tx.Retries == 0) {
+    F = MAC_TransmitGetFrame(H);
+    if (!F) {
       LOCK_End(&H->Tx.Lock);
       return MAC_STATUS_NO_DATA;
     }
-    if (H->Tx.F->FrameControl.AckRequest == MAC_ACKREQUEST_SET)
+
+    if (F->FrameControl.AckRequest == MAC_ACKREQUEST_SET)
       H->Tx.Retries = MAC_CONFIG_MAX_RETRIES;
     else
-      H->Tx.Retries = 1;
-  }
+      Ret = MAC_STATUS_NO_ACK;
 
-  // Decrease retry count
-  H->Tx.Retries--;
-  // Copy frame to data buffer
-  MAC_FrameEncode(H->Tx.F, Data, Len);
-  if (H->Tx.F->FrameControl.FrameType == MAC_FRAMETYPE_ACK)
-    Ret = MAC_STATUS_NO_DELAY;
+    if (F->FrameControl.FrameType == MAC_FRAMETYPE_ACK)
+      Ret = MAC_STATUS_NO_DELAY;
+
+    H->Tx.Sequence = F->Sequence;
 
 #ifdef MAC_DEBUG
-    MAC_DebugFrame(H, H->Tx.F, MAC_DEBUG_SND);
+    MAC_DebugFrame(H, F, MAC_DEBUG_SND);
 #endif
 
-  if (!H->Tx.Retries) {
-    if (H->Tx.F->FrameControl.AckRequest == MAC_ACKREQUEST_SET)
-      if (++H->Tx.FailedAck >= MAC_CONFIG_MAX_ACK_ERROR){
+    MAC_FrameEncode(F, H->Tx.Data, &H->Tx.Length);
+    MAC_MemFrameFree(&H->Mem, F);
+  }
+
+  *Data = H->Tx.Data;
+  *Len = H->Tx.Length;
+
+  if (H->Tx.Retries > 0)
+    if (--H->Tx.Retries == 0)
+      if (++H->Tx.FailedAck >= MAC_CONFIG_MAX_ACK_ERROR) {
         H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
+        H->Pib.CoordExtendedAdr = 0;
+        H->Pib.CoordShortAdr = MAC_CONST_BROADCAST_ADDRESS;
         H->Tx.FailedAck = 0;
       }
-    // Clean up frame
-    MAC_MemFrameFree(&H->Mem, H->Tx.F);
-    H->Tx.F = NULL;
-  }
 
   LOCK_End(&H->Tx.Lock);
 
@@ -118,10 +122,8 @@ MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
 
   // Ack frame only
   if (F->FrameControl.FrameType == MAC_FRAMETYPE_ACK) {
-    if (H->Tx.F)
-      if (H->Tx.F->Sequence == F->Sequence)
-        return MAC_STATUS_OK;
-    return MAC_STATUS_INVALID_DESTINATION;
+    // Accept all ack frames
+    return MAC_STATUS_OK;
   }
 
   // Check the destination addressing

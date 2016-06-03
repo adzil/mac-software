@@ -16,11 +16,13 @@ extern char MAC_TermBuf[256];
 
 // Transmission unit structure
 typedef struct {
-  MAC_Frame *F;
-  uint16_t Length;
+  //MAC_Frame *F;
+  uint8_t Data[MAC_CONFIG_MAX_FRAME_BUFFER];
+  LOCK_Handle Lock;
+  size_t Length;
   uint16_t Retries;
   uint16_t FailedAck;
-  LOCK_Handle Lock;
+  uint8_t Sequence;
 } MAC_Transmission;
 
 // MAC Handle for single MAC instance
