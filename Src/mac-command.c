@@ -172,6 +172,7 @@ void MAC_CmdAssocResponseHandler(MAC_Instance *H, MAC_Frame *F,
     H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_SET;
     H->Pib.ShortAdr = C->ShortAddress;
 
+    __GPIO_WRITE(GPIOA, 5, GPIO_PIN_SET);
     sprintf(MAC_TermBuf, "Joined Coord. with Addr. %x\r\n", C->ShortAddress);
     Log(MAC_TermBuf);
   } else {

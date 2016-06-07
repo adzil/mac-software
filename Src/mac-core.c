@@ -178,6 +178,7 @@ MAC_Status MAC_CoreFrameSend(MAC_Instance *H, uint8_t **Data, size_t *Len) {
 					H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
 					H->Pib.CoordExtendedAdr = 0;
 					H->Pib.CoordShortAdr = MAC_CONST_BROADCAST_ADDRESS;
+          __GPIO_WRITE(GPIOA, 5, GPIO_PIN_RESET);
 					Log("Disconnected from coord.\r\n");
 				}
       }
