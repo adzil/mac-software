@@ -14,6 +14,11 @@
 
 extern char MAC_TermBuf[256];
 
+#if (DEV_CONFIG == 0)
+#define MAC_COORDINATOR
+#endif
+
+
 // Transmission unit structure
 typedef struct {
   //MAC_Frame *F;
@@ -34,7 +39,21 @@ typedef struct {
   MAC_Mem Mem;
 } MAC_Instance;
 
+#ifndef MAC_COORDINATOR
 #define MAC_DEBUG
+#endif
+
+force_inline void Log(const char *Msg) {
+#ifndef MAC_COORDINATOR
+  HAL_UART_Transmit(&huart2, (uint8_t *)Msg, strlen(Msg), 0xff);
+#else
+	(void)0;
+#endif
+}
+
+force_inline void UARTData(uint8_t *Data, size_t Len) {
+  HAL_UART_Transmit(&huart2, Data, Len, 0xff);
+}
 
 #ifdef MAC_DEBUG
 typedef enum {
@@ -43,10 +62,6 @@ typedef enum {
   MAC_DEBUG_QUE,
   MAC_DEBUG_RDY
 } MAC_DebugDir;
-
-force_inline void Log(const char *Msg) {
-  HAL_UART_Transmit(&huart2, (uint8_t *)Msg, strlen(Msg), 0xff);
-}
 
 force_inline void MAC_DebugFrame(MAC_Instance *H, MAC_Frame *F,
                                  MAC_DebugDir Dir) {
@@ -177,7 +192,6 @@ force_inline void MAC_DebugFrame(MAC_Instance *H, MAC_Frame *F,
 void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
               MAC_PibVpanCoordinator VpanCoord);
 void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F);
-void MAC_GenFrameAck(MAC_Instance *H, MAC_Frame *SF);
 void MAC_GenFrameSrcAdr(MAC_Instance *H, MAC_Frame *F);
 
 force_inline void MAC_TransmitSendFrame(MAC_Instance *H, MAC_Frame *F) {

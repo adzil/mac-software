@@ -1,4 +1,3 @@
-#include <mac-instance.h>
 #include "mac-instance.h"
 
 char MAC_TermBuf[256];
@@ -24,13 +23,7 @@ void MAC_Init(MAC_Instance *H, uint32_t ExtendedAdr,
 }
 
 void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F) {
-  if (F->FrameControl.FrameType == MAC_FRAMETYPE_ACK) {
-#ifdef MAC_DEBUG
-    MAC_DebugFrame(H, F, MAC_DEBUG_RDY);
-#endif
-    F = MAC_QueueFramePush(&H->Mem.Tx, F);
-    if (F) MAC_MemFrameFree(&H->Mem, F);
-  } else if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
+  if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_COORDINATOR) {
 #ifdef MAC_DEBUG
     MAC_DebugFrame(H, F, MAC_DEBUG_QUE);
 #endif
@@ -38,25 +31,6 @@ void MAC_TransmitPutFrame(MAC_Instance *H, MAC_Frame *F) {
     if (F) MAC_MemFrameFree(&H->Mem, F);
   } else {
     MAC_TransmitSendFrame(H, F);
-  }
-}
-
-void MAC_GenFrameAck(MAC_Instance *H, MAC_Frame *SF) {
-  MAC_Frame *F;
-
-  if (SF->FrameControl.AckRequest == MAC_ACKREQUEST_SET &&
-      SF->FrameControl.FrameType != MAC_FRAMETYPE_ACK) {
-    F = MAC_MemFrameAlloc(&H->Mem);
-    if (!F) return;
-    MAC_SetFrameNoDstAdr(F);
-    MAC_SetFrameNoSrcAdr(F);
-    MAC_SetFrameSequence(F, SF->Sequence);
-    MAC_SetFrameNoAckRequest(F);
-    MAC_SetFrameNoPending(F);
-    MAC_SetFrameType(F, MAC_FRAMETYPE_ACK);
-    F->Payload.Length = 0;
-
-    MAC_TransmitPutFrame(H, F);
   }
 }
 

@@ -1,3 +1,4 @@
+#include <mac-frame.h>
 #include "mac-command.h"
 
 void MAC_CmdSetFrameDstFromSrc(MAC_Frame *F, MAC_Frame *SF) {
@@ -148,6 +149,10 @@ void MAC_CmdAssocRequestHandler(MAC_Instance *H, MAC_Frame *F) {
     A = MAC_QueueAdrListAppend(&H->Mem.Address, A);
     if (A) MAC_MemAdrListFree(&H->Mem, A);
     MAC_CmdAssocResponseSend(H, F, MAC_ASSOCSTATUS_SUCCESS, Adr.Short);
+
+    sprintf(MAC_TermBuf, "Joined Device X: %x S: %x\r\n",
+            F->Address.Src.Extended, Adr.Short);
+    Log(MAC_TermBuf);
   }
 }
 
@@ -166,6 +171,9 @@ void MAC_CmdAssocResponseHandler(MAC_Instance *H, MAC_Frame *F,
     // Set PIB to associated
     H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_SET;
     H->Pib.ShortAdr = C->ShortAddress;
+
+    sprintf(MAC_TermBuf, "Joined Coord. with Addr. %x\r\n", C->ShortAddress);
+    Log(MAC_TermBuf);
   } else {
     H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
   }
@@ -184,6 +192,10 @@ void MAC_CmdDiscoverResponseHandler(MAC_Instance *H, MAC_FrameCommand *C) {
   if (H->Pib.AssociatedCoord == MAC_PIB_ASSOCIATED_RESET) {
     H->Pib.CoordShortAdr = C->ShortAddress;
     H->Pib.CoordExtendedAdr = C->ExtendedAddress;
+
+    sprintf(MAC_TermBuf, "Discovered Coord. X: %x S: %x\r\n", C->ShortAddress,
+            C->ExtendedAddress);
+    Log(MAC_TermBuf);
   }
 }
 

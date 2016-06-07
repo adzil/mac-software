@@ -1,10 +1,49 @@
-#include <mac-instance.h>
 #include <mac-frame.h>
-#include <mac-pib.h>
 #include "mac-core.h"
+
+void MAC_GenFrameAck(MAC_Frame *SF) {
+  MAC_Frame F;
+  uint8_t Data[MAC_CONFIG_MAX_FRAME_BUFFER];
+  size_t Length;
+
+  if (SF->FrameControl.AckRequest == MAC_ACKREQUEST_SET &&
+      SF->FrameControl.FrameType != MAC_FRAMETYPE_ACK) {
+    MAC_SetFrameNoDstAdr(&F);
+    MAC_SetFrameNoSrcAdr(&F);
+    MAC_SetFrameSequence(&F, SF->Sequence);
+    MAC_SetFrameNoAckRequest(&F);
+    MAC_SetFrameNoPending(&F);
+    MAC_SetFrameType(&F, MAC_FRAMETYPE_ACK);
+    F.Payload.Length = 0;
+
+    MAC_FrameEncode(&F, Data, &Length);
+    PHY_API_SendStart(Data, Length);
+
+    //MAC_TransmitPutFrame(H, F);
+  }
+}
+
+void MAC_GenTxData(MAC_Instance *H, uint8_t *Data, size_t Length) {
+  MAC_Frame *F;
+
+  F = MAC_MemFrameAlloc(&H->Mem);
+  if(!F) return;
+
+  MAC_SetFrameNoDstAdr(F);
+  MAC_GenFrameSrcAdr(H, F);
+  MAC_GenFrameSequence(H, F);
+  MAC_SetFrameAckRequest(F);
+  MAC_SetFrameNoPending(F);
+  MAC_SetFrameType(F, MAC_FRAMETYPE_DATA);
+  memcpy(F->Payload.Data, Data, Length);
+  F->Payload.Length = Length;
+
+  MAC_TransmitPutFrame(H, F);
+}
 
 void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
   MAC_Frame *F;
+  //int i;
 
   // Abort frame decoding on zero-length
   if (!Length) return;
@@ -25,22 +64,45 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
     return;
   }
   // Check if the packet need to be acknowledged
-  MAC_GenFrameAck(H, F);
+  MAC_GenFrameAck(F);
 
   // Process the packet
   switch (F->FrameControl.FrameType) {
     case MAC_FRAMETYPE_DATA:
-      // TODO: Pass data to higher layer
+/*
+      Log("Data from ");
+      switch (F->FrameControl.SrcAdrMode) {
+        case MAC_ADRMODE_NOT_PRESENT:
+          Log("Coord.");
+          break;
+
+        case MAC_ADRMODE_SHORT:
+          sprintf(MAC_TermBuf, "[S: %x]", F->Address.Src.Short);
+          Log(MAC_TermBuf);
+          break;
+
+        case MAC_ADRMODE_EXTENDED:
+          sprintf(MAC_TermBuf, "[X: %x]", F->Address.Src.Extended);
+          Log(MAC_TermBuf);
+          break;
+      }
+      Log(" PAYLOAD: ");
+      for (i = 0; i < F->Payload.Length; i++) {
+        sprintf(MAC_TermBuf, "%2x ", F->Payload.Data[i]);
+        Log(MAC_TermBuf);
+      }
+      Log("\r\n");*/
+      UARTData(F->Payload.Data, F->Payload.Length);
       break;
 
     case MAC_FRAMETYPE_COMMAND:
       MAC_CmdFrameHandler(H, F);
       break;
-
+/*
     case MAC_FRAMETYPE_ACK:
       // Check for Back-Ack
-      MAC_CoreFrameBackAck(H, F);
-      break;
+      //MAC_CoreFrameBackAck(H, F);
+      break;*/
 
     default:
       break;
@@ -53,20 +115,25 @@ void MAC_CoreFrameReceived(MAC_Instance *H, uint8_t *Data, size_t Length) {
   MAC_MemFrameFree(&H->Mem, F);
 }
 
-void MAC_CoreFrameBackAck(MAC_Instance *H, MAC_Frame *F) {
+MAC_Status MAC_CoreFrameBackAck(MAC_Instance *H, MAC_Frame *F) {
   LOCK_Start(&H->Tx.Lock);
 
   if (H->Tx.Retries == 0) {
     LOCK_End(&H->Tx.Lock);
-    return;
+    return MAC_STATUS_INVALID_DESTINATION;
   }
 
   if (H->Tx.Sequence == F->Sequence) {
     H->Tx.Retries = 0;
     H->Tx.FailedAck = 0;
-  }
+  } else {
+		LOCK_End(&H->Tx.Lock);
+		return MAC_STATUS_INVALID_DESTINATION;
+	}
 
   LOCK_End(&H->Tx.Lock);
+	
+	return MAC_STATUS_OK;
 }
 
 MAC_Status MAC_CoreFrameSend(MAC_Instance *H, uint8_t **Data, size_t *Len) {
@@ -106,10 +173,13 @@ MAC_Status MAC_CoreFrameSend(MAC_Instance *H, uint8_t **Data, size_t *Len) {
   if (H->Tx.Retries > 0)
     if (--H->Tx.Retries == 0)
       if (++H->Tx.FailedAck >= MAC_CONFIG_MAX_ACK_ERROR) {
-        H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
-        H->Pib.CoordExtendedAdr = 0;
-        H->Pib.CoordShortAdr = MAC_CONST_BROADCAST_ADDRESS;
         H->Tx.FailedAck = 0;
+				if (H->Pib.VpanCoordinator == MAC_PIB_VPAN_DEVICE) {
+					H->Pib.AssociatedCoord = MAC_PIB_ASSOCIATED_RESET;
+					H->Pib.CoordExtendedAdr = 0;
+					H->Pib.CoordShortAdr = MAC_CONST_BROADCAST_ADDRESS;
+					Log("Disconnected from coord.\r\n");
+				}
       }
 
   LOCK_End(&H->Tx.Lock);
@@ -122,8 +192,7 @@ MAC_Status MAC_CoreCheckAddressing(MAC_Instance *H, MAC_Frame *F) {
 
   // Ack frame only
   if (F->FrameControl.FrameType == MAC_FRAMETYPE_ACK) {
-    // Accept all ack frames
-    return MAC_STATUS_OK;
+    return MAC_CoreFrameBackAck(H, F);
   }
 
   // Check the destination addressing

@@ -1,4 +1,3 @@
-#include <mac-frame.h>
 #include "mac-frame.h"
 
 /* Encode the structured frame into data stream */
